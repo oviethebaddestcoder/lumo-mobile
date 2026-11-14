@@ -15,3 +15,5 @@ firebase/*.json
 firebase/*.plist
 expo-env.d.ts
 coverage/
+dist-android/
+dist-ios/
