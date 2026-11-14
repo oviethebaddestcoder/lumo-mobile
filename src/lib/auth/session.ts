@@ -11,6 +11,9 @@ interface SessionState {
   /** Browsing signed-out (feed and live are public; actions prompt sign-in). */
   guest: boolean;
   browseAsGuest(): void;
+  /** A brand-new account should pick topics once ("What do you like?"). */
+  pickTopics: boolean;
+  topicsDone(): void;
   /** Bootstrap from the stored refresh token on launch. */
   restore(): Promise<void>;
   /** Apply a sign-in result from any provider. */
@@ -39,6 +42,8 @@ export const useSession = create<SessionState>((set, get) => ({
   me: null,
   guest: false,
   browseAsGuest: () => set({ guest: true }),
+  pickTopics: false,
+  topicsDone: () => set({ pickTopics: false }),
 
   async restore() {
     if (!(await client.hasSession())) {
@@ -62,7 +67,7 @@ export const useSession = create<SessionState>((set, get) => ({
     queryClient.clear();
     const me = await api.identity.me().catch(() => null);
     const fallback = me ?? ({ ...(result.user as UserPublic), has_password: false, identities: [], roles: [] } as Me);
-    set({ me: fallback, status: result.needs_birth_date ? 'needsBirthDate' : statusFor(fallback) });
+    set({ me: fallback, status: result.needs_birth_date ? 'needsBirthDate' : statusFor(fallback), pickTopics: result.is_new });
     hooks.forEach((h) => h.onSignedIn?.());
   },
 

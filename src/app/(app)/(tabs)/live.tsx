@@ -30,7 +30,7 @@ export default function LiveDiscovery() {
           <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 13 }}>Go live</Text>
         </Pressable>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.chips}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={st.chipRow} contentContainerStyle={st.chips}>
         <Chip label="For you" active={category === null} onPress={() => setCategory(null)} />
         {(cats.data?.items ?? []).map((c) => (
           <Chip key={c} label={label(c)} active={category === c} onPress={() => setCategory(c)} />
@@ -86,7 +86,9 @@ const st = StyleSheet.create({
     borderRadius: radius.pill,
   },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.live },
-  chips: { gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.md },
+  // A horizontal ScrollView in a column grows to fill the height unless told not to.
+  chipRow: { flexGrow: 0, flexShrink: 0 },
+  chips: { gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.md, alignItems: 'center' },
   pk: {
     flexDirection: 'row',
     alignItems: 'center',

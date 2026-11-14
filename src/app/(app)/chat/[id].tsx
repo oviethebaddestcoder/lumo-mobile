@@ -132,7 +132,8 @@ export default function Chat() {
   const peer = conv.data?.peer;
   const readAt = peerReadAt ?? conv.data?.peer_read_at;
   const lastMine = items.find((m) => m.sender_id === me?.id && !m.pending);
-  const seen = !!(lastMine && readAt && Date.parse(readAt) >= Date.parse(lastMine.created_at));
+  // "Seen" belongs under your own message, so show it only when that is the newest one.
+  const seen = !!(lastMine && items[0] === lastMine && readAt && Date.parse(readAt) >= Date.parse(lastMine.created_at));
 
   return (
     <Screen edges={['top', 'bottom']}>

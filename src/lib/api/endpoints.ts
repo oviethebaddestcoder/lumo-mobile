@@ -136,6 +136,8 @@ export function endpoints(c: ApiClient, device: () => Promise<T.Device>) {
     impressions: (items: T.Impression[]) => c.post<void>('/v1/feed/impressions', { items }),
     notInterested: (video_id: string) => c.post<void>('/v1/feed/not-interested', { video_id }),
     interests: () => c.get<{ items: T.Interest[] }>('/v1/feed/me/interests'),
+    setInterests: (tags: string[]) => c.post<void>('/v1/feed/me/interests', { tags }),
+    topics: () => c.get<{ items: T.Topic[] }>('/v1/feed/topics'),
     removeInterest: (tag: string) => c.del<void>(`/v1/feed/me/interests/${enc(tag)}`),
     reset: () => c.post<void>('/v1/feed/me/reset', {}),
   };

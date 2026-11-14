@@ -367,6 +367,11 @@ export interface Impression {
   surface?: FeedSurface;
 }
 
+export interface Topic {
+  tag: string;
+  videos: number;
+}
+
 export interface Interest {
   tag: string;
   /** 0..1 */
