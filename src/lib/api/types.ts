@@ -159,6 +159,7 @@ export interface GiftSendInput {
   qty: number;
   room_id?: ID;
   video_id?: ID;
+  from_backpack?: boolean;
 }
 
 export interface GiftSendResult {
@@ -249,6 +250,7 @@ export interface Edge {
 export interface FollowCounts {
   followers: number;
   following: number;
+  likes_received: number;
 }
 
 export interface Relationship {
@@ -304,6 +306,7 @@ export interface Video {
   duration_ms: number;
   width: number;
   height: number;
+  views: number;
   created_at: string;
 }
 
@@ -357,4 +360,107 @@ export interface NotifyPrefs {
   comments: boolean;
   likes: boolean;
   live: boolean;
+  messages: boolean;
+}
+
+export interface InboxItem {
+  id: number;
+  kind: 'follow' | 'comment' | 'likes' | 'payout' | string;
+  actor_id?: ID;
+  actor_name?: string;
+  actor_avatar?: string;
+  title: string;
+  body?: string;
+  data: Record<string, string>;
+  created_at: string;
+  read: boolean;
+}
+
+// ---- wallet extras ----
+export interface WalletStats {
+  level: number;
+  coins_spent: number;
+  level_start_coins: number;
+  next_level_coins: number;
+  diamonds_week: number;
+  diamonds_earned_total: number;
+}
+
+export interface UserLevel {
+  user_id: ID;
+  level: number;
+}
+
+export interface CheckinReward {
+  gift_id: string;
+  qty: number;
+}
+
+export interface BackpackItem extends Gift {
+  qty: number;
+}
+
+export interface Backpack {
+  items: BackpackItem[];
+  checked_in_today: boolean;
+  streak: number;
+  next_reward: CheckinReward;
+}
+
+export interface CheckinResult {
+  already_checked_in: boolean;
+  streak: number;
+  reward: CheckinReward;
+}
+
+export interface Bank {
+  code: string;
+  name: string;
+}
+
+export interface PayoutAccount {
+  bank_code: string;
+  bank_name: string;
+  account_last4: string;
+  account_name: string;
+  updated_at: string;
+}
+
+export interface Payout {
+  id: ID;
+  user_id: ID;
+  diamonds: number;
+  amount_kobo: number;
+  bank_label: string;
+  status: 'pending_review' | 'processing' | 'paid' | 'rejected' | 'failed';
+  note?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ImageUpload {
+  upload_url: string;
+  url: string;
+  expires_at: number;
+}
+
+// ---- direct messages ----
+export interface Conversation {
+  id: ID;
+  peer: UserPublic;
+  last_message_at?: string;
+  last_preview: string;
+  last_from_me: boolean;
+  unread: number;
+  peer_read_at?: string;
+}
+
+export interface DirectMessage {
+  id: ID;
+  conversation_id: ID;
+  sender_id: ID;
+  client_id?: string;
+  text: string;
+  created_at: string;
+  deleted?: boolean;
 }

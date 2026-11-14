@@ -117,6 +117,20 @@ describe('RoomSocket', () => {
     s.close();
   });
 
+  it('connects to the personal channel by path', async () => {
+    const s = new RoomSocket({
+      wsUrl: 'wss://api.test',
+      path: '/v1/rt/me',
+      getToken: async () => 'tok',
+      onEvent: () => undefined,
+      WebSocketImpl: FakeWS as unknown as typeof WebSocket,
+    });
+    s.connect();
+    await flush();
+    expect(FakeWS.instances[0]!.url).toBe('wss://api.test/v1/rt/me?access_token=tok');
+    s.close();
+  });
+
   it('ignores malformed frames', async () => {
     const events: RoomEvent[] = [];
     const s = make(events);

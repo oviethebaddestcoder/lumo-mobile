@@ -11,6 +11,7 @@ const ROWS: [keyof NotifyPrefs, string, string][] = [
   ['new_follower', 'New followers', 'When someone follows you'],
   ['comments', 'Comments', 'Comments and replies on your videos'],
   ['likes', 'Likes', 'Likes on your videos (batched)'],
+  ['messages', 'Messages', 'New direct messages'],
 ];
 
 export default function NotificationSettings() {

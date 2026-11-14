@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Share } from 'react-native';
+import { Alert, Share, View } from 'react-native';
 import { ProfileView } from '@/components/ProfileView';
 import { ReportSheet } from '@/components/ReportSheet';
 import { toast, toastError } from '@/components/Toast';
@@ -11,6 +11,7 @@ import { useSession } from '@/lib/auth/session';
 import { config } from '@/lib/config';
 import { useFollow, useRelationship, useUser } from '@/lib/hooks';
 import { qk } from '@/lib/query';
+import { space } from '@/theme/tokens';
 
 export default function UserProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,6 +22,11 @@ export default function UserProfile() {
   const qc = useQueryClient();
   const [sheet, setSheet] = useState<'report' | null>(null);
 
+  const openChat = useMutation({
+    mutationFn: () => api.dm.open(id),
+    onSuccess: (c) => router.push(`/chat/${c.id}`),
+    onError: toastError,
+  });
   const block = useMutation({
     mutationFn: (on: boolean) => (on ? api.social.block(id) : api.social.unblock(id)),
     onSuccess: (_d, on) => {
@@ -59,13 +65,16 @@ export default function UserProfile() {
           isMe ? null : blocking ? (
             <Button title="Unblock" kind="secondary" small onPress={() => block.mutate(false)} />
           ) : (
-            <Button
-              small
-              title={following ? (rel.data?.followed_by ? 'Friends' : 'Following') : rel.data?.followed_by ? 'Follow back' : 'Follow'}
-              kind={following ? 'secondary' : 'primary'}
-              loading={follow.isPending}
-              onPress={guard(() => follow.mutate(!following))}
-            />
+            <View style={{ flexDirection: 'row', gap: space.sm }}>
+              <Button
+                small
+                title={following ? (rel.data?.followed_by ? 'Friends' : 'Following') : rel.data?.followed_by ? 'Follow back' : 'Follow'}
+                kind={following ? 'secondary' : 'primary'}
+                loading={follow.isPending}
+                onPress={guard(() => follow.mutate(!following))}
+              />
+              <Button small title="Message" kind="secondary" loading={openChat.isPending} onPress={guard(() => openChat.mutate())} />
+            </View>
           )
         }
       />

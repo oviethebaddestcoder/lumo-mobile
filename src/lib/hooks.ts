@@ -173,3 +173,35 @@ export function useImpressions() {
     [flush],
   );
 }
+
+export function useStats() {
+  const signedIn = useSignedIn();
+  return useQuery({ queryKey: qk.stats, queryFn: api.wallet.stats, enabled: signedIn });
+}
+
+/** Sender levels for a set of users (batched, cached a minute). */
+export function useLevels(ids: string[]) {
+  const key = [...new Set(ids)].sort().join(',');
+  return useQuery({
+    queryKey: qk.levels(key),
+    queryFn: async () => {
+      const res = await api.wallet.levels(key.split(','));
+      return Object.fromEntries(res.items.map((l) => [l.user_id, l.level])) as Record<string, number>;
+    },
+    enabled: key.length > 0,
+    staleTime: 60_000,
+  });
+}
+
+export function useBackpack() {
+  const signedIn = useSignedIn();
+  return useQuery({ queryKey: qk.backpack, queryFn: api.wallet.backpack, enabled: signedIn });
+}
+
+/** Badge counts for the inbox bell and messages icon. */
+export function useBadges() {
+  const signedIn = useSignedIn();
+  const inbox = useQuery({ queryKey: qk.inboxUnread, queryFn: api.notify.unread, enabled: signedIn, refetchInterval: 60_000 });
+  const dms = useQuery({ queryKey: qk.dmUnread, queryFn: api.dm.unread, enabled: signedIn, refetchInterval: 60_000 });
+  return { inbox: inbox.data?.count ?? 0, messages: dms.data?.count ?? 0 };
+}

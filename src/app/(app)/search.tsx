@@ -1,49 +1,94 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
-import { Avatar, Field, Header, Loading, Screen, Text } from '@/components/ui';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Icon } from '@/components/Icon';
+import { Avatar, Empty, Field, Header, Loading, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
-import { isApiError } from '@/lib/api/http';
 import { qk } from '@/lib/query';
-import { fonts, space } from '@/theme/tokens';
+import { colors, fonts, space } from '@/theme/tokens';
 
-/** Find a creator by @username (the gateway exposes exact handle lookup). */
+type Tab = 'people' | 'hashtags';
+
+/** People (handle / name prefix) and hashtags. */
 export default function Search() {
   const [text, setText] = useState('');
-  const [handle, setHandle] = useState('');
+  const [q, setQ] = useState('');
+  const [tab, setTab] = useState<Tab>('people');
   useEffect(() => {
-    const t = setTimeout(() => setHandle(text.trim().replace(/^@/, '').toLowerCase()), 350);
+    const t = setTimeout(() => setQ(text.trim()), 300);
     return () => clearTimeout(t);
   }, [text]);
-  const q = useQuery({
-    queryKey: qk.userByHandle(handle),
-    queryFn: () => api.identity.userByHandle(handle),
-    enabled: handle.length >= 2,
-    retry: false,
+
+  const people = useQuery({
+    queryKey: qk.searchUsers(q.toLowerCase()),
+    queryFn: () => api.identity.searchUsers(q),
+    enabled: tab === 'people' && q.replace(/^@/, '').length >= 2,
+    staleTime: 30_000,
   });
+  const tag = q.replace(/^#/, '').toLowerCase().replace(/[^\p{L}\p{N}_]/gu, '');
 
   return (
     <Screen>
       <Header title="Search" />
-      <View style={{ padding: space.lg, gap: space.lg }}>
-        <Field value={text} onChangeText={setText} placeholder="@username" autoCapitalize="none" autoCorrect={false} autoFocus />
-        {q.isFetching ? <Loading style={{ flex: 0 }} /> : null}
-        {q.data ? (
-          <Pressable
-            onPress={() => router.push(`/user/${q.data.id}`)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}
-          >
-            <Avatar uri={q.data.avatar_url} name={q.data.display_name} size={48} />
-            <View>
-              <Text style={{ fontFamily: fonts.bodySemibold }}>{q.data.display_name}</Text>
-              <Text variant="caption">@{q.data.handle}</Text>
-            </View>
-          </Pressable>
-        ) : q.isError && handle ? (
-          <Text variant="bodyMuted">{isApiError(q.error) && q.error.status === 404 ? `No one is @${handle}.` : q.error.message}</Text>
-        ) : null}
+      <View style={{ paddingHorizontal: space.lg, gap: space.md }}>
+        <Field
+          value={text}
+          onChangeText={(t) => {
+            setText(t);
+            if (t.trim().startsWith('#')) setTab('hashtags');
+          }}
+          placeholder="Search people or #hashtags" autoCapitalize="none" autoCorrect={false} autoFocus />
+        <View style={st.tabs}>
+          {(['people', 'hashtags'] as const).map((t) => (
+            <Pressable key={t} onPress={() => setTab(t)} style={[st.tab, tab === t && st.on]} accessibilityRole="tab">
+              <Text style={{ fontFamily: fonts.bodySemibold, color: tab === t ? colors.text : colors.inactive }}>
+                {t === 'people' ? 'People' : 'Hashtags'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
+      {tab === 'people' ? (
+        people.isFetching && !people.data ? (
+          <Loading />
+        ) : (
+          <FlatList
+            data={people.data?.items ?? []}
+            keyExtractor={(u) => u.id}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={q.length >= 2 ? <Empty title="No one found" hint="Try a different name or @username." /> : undefined}
+            renderItem={({ item }) => (
+              <Pressable style={st.row} onPress={() => router.push(`/user/${item.id}`)}>
+                <Avatar uri={item.avatar_url} name={item.display_name} size={46} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: fonts.bodySemibold }}>{item.display_name}</Text>
+                  <Text variant="caption">@{item.handle}</Text>
+                </View>
+                {item.verified ? <Icon name="check" size={16} color={colors.diamond} strokeWidth={3} /> : null}
+              </Pressable>
+            )}
+          />
+        )
+      ) : tag ? (
+        <Pressable style={st.row} onPress={() => router.push(`/tag/${encodeURIComponent(tag)}`)}>
+          <View style={st.hash}>
+            <Icon name="hash" size={22} />
+          </View>
+          <Text style={{ fontFamily: fonts.bodySemibold, flex: 1 }}>#{tag}</Text>
+          <Text variant="caption">See videos</Text>
+        </Pressable>
+      ) : (
+        <Empty title="Find a hashtag" hint="Type a tag like #afrodance." />
+      )}
     </Screen>
   );
 }
+
+const st = StyleSheet.create({
+  tabs: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: space.sm },
+  on: { borderBottomWidth: 2, borderBottomColor: colors.text },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.sm },
+  hash: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
+});

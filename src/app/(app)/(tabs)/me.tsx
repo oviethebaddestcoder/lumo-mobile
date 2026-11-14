@@ -5,12 +5,14 @@ import { ProfileView } from '@/components/ProfileView';
 import { Button, CoinAmount, Empty, Screen, Text } from '@/components/ui';
 import { useSession } from '@/lib/auth/session';
 import { compact } from '@/lib/format';
-import { useBalance } from '@/lib/hooks';
+import { useBadges, useBalance, useStats } from '@/lib/hooks';
 import { colors, fonts, radius, space } from '@/theme/tokens';
 
 export default function MeTab() {
   const me = useSession((s) => s.me);
   const balance = useBalance();
+  const stats = useStats();
+  const badges = useBadges();
 
   if (!me) {
     return (
@@ -34,9 +36,13 @@ export default function MeTab() {
               <Icon name="qr" />
             </Pressable>
             <Text variant="h3">@{me.handle}</Text>
-            <Pressable onPress={() => router.push('/settings')} accessibilityLabel="Settings" hitSlop={10}>
-              <Icon name="settings" />
-            </Pressable>
+            <View style={{ flexDirection: 'row', gap: space.lg }}>
+              <BadgeIcon icon="chat" count={badges.messages} label="Messages" onPress={() => router.push('/messages')} />
+              <BadgeIcon icon="bell" count={badges.inbox} label="Notifications" onPress={() => router.push('/inbox')} />
+              <Pressable onPress={() => router.push('/settings')} accessibilityLabel="Settings" hitSlop={10}>
+                <Icon name="settings" />
+              </Pressable>
+            </View>
           </View>
         }
         actions={
@@ -56,10 +62,17 @@ export default function MeTab() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Icon name="diamond" size={16} />
                 <Text style={{ color: colors.diamond, fontFamily: fonts.bodySemibold, fontSize: 16 }}>
-                  {compact(balance.data?.diamonds ?? 0)}
+                  {compact(stats.data?.diamonds_week ?? 0)}
                 </Text>
               </View>
-              <Text variant="caption">Diamonds · Cash out</Text>
+              <Text variant="caption">Diamonds this week</Text>
+            </View>
+            <View style={st.sep} />
+            <View style={st.walletCol}>
+              <Text style={{ color: colors.text, fontFamily: fonts.bodySemibold, fontSize: 16 }}>
+                {compact(balance.data?.diamonds ?? 0)}
+              </Text>
+              <Text variant="caption">Cash out</Text>
             </View>
           </Pressable>
         }
@@ -82,4 +95,30 @@ const st = StyleSheet.create({
   },
   walletCol: { flex: 1, alignItems: 'center', gap: 2 },
   sep: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: colors.border },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: colors.live,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { fontSize: 10, fontFamily: fonts.bodyBold },
 });
+
+function BadgeIcon({ icon, count, label, onPress }: { icon: 'bell' | 'chat'; count: number; label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityLabel={count ? `${label}, ${count} unread` : label} hitSlop={10}>
+      <Icon name={icon} />
+      {count > 0 ? (
+        <View style={st.badge}>
+          <Text style={st.badgeText}>{count > 99 ? '99+' : count}</Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}

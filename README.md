@@ -59,11 +59,16 @@ src/
     (app)/upload          multipart upload with progress
     (app)/settings/       profile, linked sign-ins, password, sessions, notifications
     (app)/qr-scan, qr-login   approve sign-in on web/TV
+    (app)/inbox           activity (follows, comments, milestones, cash-outs)
+    (app)/messages, chat/[id]   direct messages, live over /v1/rt/me, read receipts, unsend
+    (app)/search, tag/[tag]     people search and hashtag pages
+    (app)/wallet/bank     Nigerian bank account for cash-outs (verified by the bank)
   lib/
     api/http.ts           fetch client: bearer auth, single-flight refresh, error envelope, safe retries
     api/endpoints.ts      every gateway route, typed, grouped by service
     api/types.ts          wire types matching the Go structs
     realtime.ts           room WebSocket with jittered backoff and a fresh token per reconnect
+    meChannel.ts          the user's personal socket (DMs, read receipts)
     uploader.ts           S3 multipart through presigned URLs (16 MiB parts, ETags, re-signing)
     iap.ts                Play/App Store purchase → server verify → finish, with crash recovery
     push.ts               FCM token registration and tap routing
@@ -94,6 +99,6 @@ src/
 
 ## Known gaps
 
-- Avatar upload: the backend has no image upload endpoint yet, so Edit profile accepts an https photo URL. Add a presigned image upload to svc-media to fix this.
-- Search finds a user by exact `@handle` only (the only lookup the gateway exposes).
-- The Gifts tab is real. The Lucky and Backpack tabs are placeholders.
+- Lucky gifts are intentionally not built (random prizes bought with money count as gambling in many countries and app stores restrict them).
+- Gifts from the Backpack (free daily check-in rewards) count toward PK scores and room goals but pay the receiver no diamonds, so free gifts can't be farmed into cash.
+- The cash-out estimate in the app uses ₦0.50 per diamond for display; the server's `PAYOUT_KOBO_PER_DIAMOND` sets the real rate.

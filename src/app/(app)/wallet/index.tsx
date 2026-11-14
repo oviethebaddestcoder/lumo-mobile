@@ -6,9 +6,10 @@ import { Icon } from '@/components/Icon';
 import { toast, toastError } from '@/components/Toast';
 import { Button, ErrorView, Field, Header, ListRow, Loading, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
+import { isApiError } from '@/lib/api/http';
 import type { CoinPack } from '@/lib/api/types';
 import { newIdempotencyKey } from '@/lib/device';
-import { useBalance, useCatalog } from '@/lib/hooks';
+import { useBalance, useCatalog, useStats } from '@/lib/hooks';
 import { buyPack, loadStoreProducts, onPurchaseOutcome, storeProductId } from '@/lib/iap';
 import { qk } from '@/lib/query';
 import { colors, fonts, radius, space } from '@/theme/tokens';
@@ -57,11 +58,24 @@ export default function Wallet() {
       setPayoutKey(newIdempotencyKey());
       qc.setQueryData(qk.balance, (b: { coins: number; diamonds: number } | undefined) => (b ? { ...b, diamonds: r.diamonds_left } : b));
       void qc.invalidateQueries({ queryKey: qk.history });
+      void qc.invalidateQueries({ queryKey: qk.payouts });
       toast('Cash-out requested. We review payouts within 3 business days.', 'success');
     },
-    onError: toastError,
+    onError: (e) => {
+      if (isApiError(e) && e.code === 'payout_account_required') {
+        toast('Add your bank account first.', 'error');
+        router.push('/wallet/bank');
+        return;
+      }
+      toastError(e);
+    },
   });
   const diamonds = parseInt(cashout, 10) || 0;
+  const stats = useStats();
+  const bank = useQuery({ queryKey: qk.payoutAccount, queryFn: api.wallet.payoutAccount });
+  const payouts = useQuery({ queryKey: qk.payouts, queryFn: api.wallet.payouts });
+  const lv = stats.data;
+  const progress = lv ? Math.min(1, (lv.coins_spent - lv.level_start_coins) / Math.max(1, lv.next_level_coins - lv.level_start_coins)) : 0;
 
   return (
     <Screen>
@@ -119,9 +133,35 @@ export default function Wallet() {
           can’t be refunded or transferred.
         </Text>
 
+        {lv ? (
+          <View style={st.levelCard}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ fontFamily: fonts.bodySemibold }}>Level {lv.level}</Text>
+              <Text variant="caption">
+                {(lv.next_level_coins - lv.coins_spent).toLocaleString()} coins of gifts to Lv{lv.level + 1}
+              </Text>
+            </View>
+            <View style={st.track}>
+              <View style={[st.fill, { width: `${Math.round(progress * 100)}%` }]} />
+            </View>
+            <Text variant="caption">Diamonds this week: {lv.diamonds_week.toLocaleString()}</Text>
+          </View>
+        ) : null}
+
         <Text variant="h3" style={{ marginTop: space.md }}>
           Cash out diamonds
         </Text>
+        <ListRow
+          label={bank.data?.account ? `${bank.data.account.bank_name} ••${bank.data.account.account_last4}` : 'Add bank account'}
+          value={bank.data?.account ? 'Change' : undefined}
+          icon="bank"
+          onPress={() => router.push('/wallet/bank')}
+        />
+        {diamonds > 0 ? (
+          <Text variant="caption">
+            ≈ ₦{((diamonds * KOBO_PER_DIAMOND_HINT) / 100).toLocaleString()} before review (final amount is shown when finance approves)
+          </Text>
+        ) : null}
         <View style={{ gap: space.md }}>
           <Field
             label="Diamonds"
@@ -143,13 +183,49 @@ export default function Wallet() {
             }
           />
         </View>
+        {(payouts.data?.items ?? []).length > 0 ? (
+          <View style={{ gap: space.sm }}>
+            <Text variant="h3">Cash-outs</Text>
+            {payouts.data!.items.slice(0, 5).map((p) => (
+              <View key={p.id} style={st.payoutRow}>
+                <View style={{ flex: 1 }}>
+                  <Text>
+                    {p.diamonds.toLocaleString()} diamonds · ₦{(p.amount_kobo / 100).toLocaleString()}
+                  </Text>
+                  <Text variant="caption">
+                    {new Date(p.created_at).toLocaleDateString()} {p.bank_label ? `· ${p.bank_label}` : ''}
+                    {p.note ? ` · ${p.note}` : ''}
+                  </Text>
+                </View>
+                <Text style={{ color: statusColor[p.status] ?? colors.muted, fontFamily: fonts.bodySemibold, fontSize: 13 }}>
+                  {statusLabel[p.status] ?? p.status}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
         <ListRow label="Transaction history" icon="more" onPress={() => router.push('/wallet/history')} />
       </ScrollView>
     </Screen>
   );
 }
 
+// Display-only estimate; the server's PAYOUT_KOBO_PER_DIAMOND decides the real amount.
+const KOBO_PER_DIAMOND_HINT = 50;
+const statusLabel: Record<string, string> = {
+  pending_review: 'In review',
+  processing: 'Sending',
+  paid: 'Paid',
+  rejected: 'Declined',
+  failed: 'Failed',
+};
+const statusColor: Record<string, string> = { paid: colors.success, rejected: colors.danger, failed: colors.danger };
+
 const st = StyleSheet.create({
+  levelCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
+  track: { height: 8, borderRadius: 4, backgroundColor: colors.surface2, overflow: 'hidden' },
+  fill: { height: 8, backgroundColor: colors.coin },
+  payoutRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: colors.surface, borderRadius: radius.md, padding: space.md },
   balances: { flexDirection: 'row', gap: space.md },
   card: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, padding: space.lg, gap: 4 },
   big: { fontFamily: fonts.heading, fontSize: 26 },

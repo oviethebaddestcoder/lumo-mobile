@@ -1,6 +1,7 @@
 import { registerGlobals } from '@livekit/react-native';
 import { registerSessionHooks } from './auth/session';
 import { startIap, stopIap } from './iap';
+import { startMeChannel, stopMeChannel } from './meChannel';
 import { registerPush, unregisterPush } from './push';
 
 let done = false;
@@ -15,8 +16,10 @@ export function bootstrap() {
     onSignedIn: () => {
       void registerPush();
       void startIap();
+      startMeChannel();
     },
     onSignedOut: async () => {
+      stopMeChannel();
       await unregisterPush();
       await stopIap();
     },

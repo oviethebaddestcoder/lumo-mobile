@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { UserPublic, Video, VideoKind } from '@/lib/api/types';
 import { compact, duration } from '@/lib/format';
-import { useCounts, useUserVideos } from '@/lib/hooks';
+import { useCounts, useLevels, useUserVideos } from '@/lib/hooks';
 import { colors, fonts, space } from '@/theme/tokens';
 import { Icon } from './Icon';
 import { Avatar, Empty, Loading, Text } from './ui';
@@ -29,6 +29,8 @@ export function ProfileView({
 }) {
   const [kind, setKind] = useState<VideoKind>('short');
   const counts = useCounts(user.id);
+  const levels = useLevels([user.id]);
+  const level = levels.data?.[user.id];
   const videos = useUserVideos(user.id, kind);
   const items = useMemo(() => videos.data?.pages.flatMap((p) => p.items) ?? [], [videos.data]);
   const { width } = useWindowDimensions();
@@ -42,6 +44,7 @@ export function ProfileView({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text variant="h2">{user.display_name}</Text>
           {user.verified ? <Icon name="check" size={16} color={colors.diamond} strokeWidth={3} /> : null}
+          {level ? <LevelBadge level={level} /> : null}
         </View>
         <Text variant="bodyMuted">@{user.handle}</Text>
         <View style={st.stats}>
@@ -55,6 +58,7 @@ export function ProfileView({
             label="Followers"
             onPress={() => router.push({ pathname: '/follows/[id]', params: { id: user.id, tab: 'followers' } })}
           />
+          <Stat value={counts.data?.likes_received} label="Likes" />
         </View>
         {actions}
         {user.bio ? (
@@ -117,7 +121,7 @@ function Thumb({ v, size }: { v: Video; size: number }) {
         ) : (
           <>
             <Icon name="play" size={10} />
-            <Text style={st.badgeText}>{duration(v.duration_ms)}</Text>
+            <Text style={st.badgeText}>{v.kind === 'short' ? compact(v.views ?? 0) : duration(v.duration_ms)}</Text>
           </>
         )}
       </View>
@@ -127,6 +131,14 @@ function Thumb({ v, size }: { v: Video; size: number }) {
         </View>
       ) : null}
     </Pressable>
+  );
+}
+
+export function LevelBadge({ level }: { level: number }) {
+  return (
+    <View style={st.level} accessibilityLabel={`Level ${level}`}>
+      <Text style={st.levelText}>Lv{level}</Text>
+    </View>
   );
 }
 
@@ -147,4 +159,6 @@ const st = StyleSheet.create({
   tabOn: { borderBottomWidth: 2, borderBottomColor: colors.text },
   badge: { position: 'absolute', left: 4, bottom: 4, flexDirection: 'row', alignItems: 'center', gap: 3 },
   badgeText: { fontSize: 11, fontFamily: fonts.bodySemibold },
+  level: { backgroundColor: colors.coin, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  levelText: { color: colors.onCoin, fontFamily: fonts.bodyBold, fontSize: 11 },
 });

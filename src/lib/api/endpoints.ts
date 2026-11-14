@@ -42,6 +42,7 @@ export function endpoints(c: ApiClient, device: () => Promise<T.Device>) {
     userByHandle: (handle: string) =>
       c.get<T.UserPublic>(`/v1/users/by-handle/${enc(handle.replace(/^@/, ''))}`, { auth: 'optional' }),
     users: (ids: string[]) => c.get<{ items: T.UserPublic[] }>('/v1/users', { query: { ids: ids.join(',') }, auth: 'optional' }),
+    searchUsers: (q: string) => c.get<{ items: T.UserPublic[] }>('/v1/users/search', { query: { q }, auth: 'optional' }),
   };
 
   const wallet = {
@@ -56,6 +57,15 @@ export function endpoints(c: ApiClient, device: () => Promise<T.Device>) {
     verifyApple: (transaction_id: string) => c.post<T.PurchaseResult>('/v1/wallet/purchases/apple', { transaction_id }),
     payout: (diamonds: number, idempotencyKey: string) =>
       c.post<T.PayoutResult>('/v1/wallet/payouts', { diamonds }, { idempotencyKey }),
+    payouts: () => c.get<{ items: T.Payout[] }>('/v1/wallet/payouts'),
+    stats: () => c.get<T.WalletStats>('/v1/wallet/stats'),
+    levels: (ids: string[]) => c.get<{ items: T.UserLevel[] }>('/v1/wallet/levels', { query: { ids: ids.join(',') }, auth: 'none' }),
+    backpack: () => c.get<T.Backpack>('/v1/wallet/backpack'),
+    checkin: () => c.post<T.CheckinResult>('/v1/wallet/checkin'),
+    banks: () => c.get<{ items: T.Bank[] }>('/v1/wallet/banks'),
+    payoutAccount: () => c.get<{ account: T.PayoutAccount | null }>('/v1/wallet/payout-account'),
+    setPayoutAccount: (bank_code: string, account_number: string) =>
+      c.put<{ account: T.PayoutAccount }>('/v1/wallet/payout-account', { bank_code, account_number }),
   };
 
   const live = {
@@ -113,6 +123,10 @@ export function endpoints(c: ApiClient, device: () => Promise<T.Device>) {
     deleteVideo: (id: string) => c.del<void>(`/v1/media/videos/${enc(id)}`),
     userVideos: (userId: string, kind?: T.VideoKind, cursor?: string) =>
       c.get<T.Page<T.Video>>(`/v1/media/users/${enc(userId)}/videos`, { query: { kind, cursor }, auth: 'optional' }),
+    hashtagVideos: (tag: string, cursor?: string) =>
+      c.get<T.Page<T.Video>>(`/v1/media/hashtags/${enc(tag.replace(/^#/, '').toLowerCase())}/videos`, { query: { cursor }, auth: 'optional' }),
+    imageUpload: (purpose: 'avatar' | 'thumbnail', content_type: string, size_bytes: number) =>
+      c.post<T.ImageUpload>('/v1/media/images', { purpose, content_type, size_bytes }),
   };
 
   const feed = {
@@ -127,9 +141,27 @@ export function endpoints(c: ApiClient, device: () => Promise<T.Device>) {
     unregisterDevice: (token: string) => c.del<void>(`/v1/notify/devices/${enc(token)}`),
     prefs: () => c.get<T.NotifyPrefs>('/v1/notify/prefs'),
     setPrefs: (p: T.NotifyPrefs) => c.put<T.NotifyPrefs>('/v1/notify/prefs', p),
+    inbox: (cursor?: string) => c.get<T.Page<T.InboxItem>>('/v1/notify/inbox', { query: { cursor } }),
+    unread: () => c.get<{ count: number }>('/v1/notify/inbox/unread'),
+    markRead: () => c.post<void>('/v1/notify/inbox/read'),
   };
 
-  return { identity, wallet, live, social, media, feed, notify };
+  const dm = {
+    conversations: (cursor?: string) => c.get<T.Page<T.Conversation>>('/v1/dm/conversations', { query: { cursor } }),
+    open: (user_id: string) => c.post<T.Conversation>('/v1/dm/conversations', { user_id }),
+    conversation: (id: string) => c.get<T.Conversation>(`/v1/dm/conversations/${enc(id)}`),
+    hide: (id: string) => c.del<void>(`/v1/dm/conversations/${enc(id)}`),
+    messages: (id: string, cursor?: string) =>
+      c.get<T.Page<T.DirectMessage>>(`/v1/dm/conversations/${enc(id)}/messages`, { query: { cursor } }),
+    // client_id makes retries safe: the server returns the original message.
+    send: (id: string, text: string, client_id: string) =>
+      c.post<T.DirectMessage>(`/v1/dm/conversations/${enc(id)}/messages`, { text, client_id }, { idempotencyKey: client_id }),
+    read: (id: string) => c.post<void>(`/v1/dm/conversations/${enc(id)}/read`),
+    unsend: (messageId: string) => c.del<void>(`/v1/dm/messages/${enc(messageId)}`),
+    unread: () => c.get<{ count: number }>('/v1/dm/unread'),
+  };
+
+  return { identity, wallet, live, social, media, feed, notify, dm };
 }
 
 export type Endpoints = ReturnType<typeof endpoints>;

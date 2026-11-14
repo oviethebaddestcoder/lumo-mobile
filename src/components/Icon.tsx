@@ -29,7 +29,11 @@ export type IconName =
   | 'upload'
   | 'swords'
   | 'qr'
-  | 'check';
+  | 'check'
+  | 'bell'
+  | 'chat'
+  | 'hash'
+  | 'bank';
 
 interface Props {
   name: IconName;
@@ -162,6 +166,14 @@ export function Icon({ name, size = 24, color = colors.text, strokeWidth = 2 }: 
         );
       case 'check':
         return <Path {...p} d="m5 12 5 5 9-10" />;
+      case 'bell':
+        return <Path {...p} d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" />;
+      case 'chat':
+        return <Path {...p} d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />;
+      case 'hash':
+        return <Path {...p} d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" />;
+      case 'bank':
+        return <Path {...p} d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M12 3 3 8h18z" />;
     }
   })();
   return (

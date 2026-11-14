@@ -55,6 +55,10 @@ export function routeForPush(data: Record<string, unknown> | undefined): string 
       return s('video_id') ? `/watch/${s('video_id')}` : null;
     case 'live':
       return s('room_id') ? `/live/${s('room_id')}` : null;
+    case 'dm':
+      return s('conversation_id') ? `/chat/${s('conversation_id')}` : null;
+    case 'payout':
+      return '/wallet';
     default:
       return null;
   }

@@ -26,6 +26,8 @@ describe('format', () => {
     expect(routeForPush({ type: 'follow', user_id: 'u1' })).toBe('/user/u1');
     expect(routeForPush({ type: 'comment', video_id: 'v1', comment_id: 'c1' })).toBe('/watch/v1?comments=1');
     expect(routeForPush({ type: 'live', room_id: 'r1' })).toBe('/live/r1');
+    expect(routeForPush({ type: 'dm', conversation_id: 'c9' })).toBe('/chat/c9');
+    expect(routeForPush({ type: 'payout', payout_id: 'p1' })).toBe('/wallet');
     expect(routeForPush({ type: 'unknown' })).toBeNull();
     expect(routeForPush(undefined)).toBeNull();
   });

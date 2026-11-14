@@ -53,13 +53,28 @@ export type RoomEvent =
   | { type: 'room_ended'; data: { reason?: string } }
   | { type: 'kick'; data: unknown }
   | { type: 'system'; data: SystemData }
-  | { type: 'error'; data: { code: string; message: string } };
+  | { type: 'error'; data: { code: string; message: string } }
+  // Personal channel (/v1/rt/me)
+  | { type: 'dm'; data: DmData }
+  | { type: 'dm_read'; data: { conversation_id: ID; user_id: ID; read_at: string } };
+
+export interface DmData {
+  id: ID;
+  conversation_id: ID;
+  sender_id: ID;
+  text: string;
+  client_id?: string;
+  created_at: string;
+}
 
 export type SocketState = 'connecting' | 'open' | 'reconnecting' | 'closed';
 
 export interface RoomSocketOptions {
   wsUrl: string;
-  roomId: string;
+  /** A live room ID, or omit and set `path` for another channel. */
+  roomId?: string;
+  /** Socket path, e.g. '/v1/rt/me' for the personal channel. */
+  path?: string;
   getToken: () => Promise<string | null>;
   onEvent: (e: RoomEvent) => void;
   onState?: (s: SocketState) => void;
@@ -82,7 +97,8 @@ export class RoomSocket {
   private attempt = 0;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private stopped = false;
-  private readonly o: Required<Omit<RoomSocketOptions, 'onState'>> & Pick<RoomSocketOptions, 'onState'>;
+  private readonly o: Required<Omit<RoomSocketOptions, 'onState' | 'roomId' | 'path'>> &
+    Pick<RoomSocketOptions, 'onState' | 'roomId' | 'path'>;
 
   constructor(opts: RoomSocketOptions) {
     this.o = {
@@ -145,7 +161,8 @@ export class RoomSocket {
       this.schedule();
       return;
     }
-    const url = `${this.o.wsUrl}/v1/rt/rooms/${encodeURIComponent(this.o.roomId)}?access_token=${encodeURIComponent(token)}`;
+    const path = this.o.path ?? `/v1/rt/rooms/${encodeURIComponent(this.o.roomId ?? '')}`;
+    const url = `${this.o.wsUrl}${path}?access_token=${encodeURIComponent(token)}`;
     const ws = new this.o.WebSocketImpl(url);
     this.ws = ws;
 

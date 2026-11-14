@@ -1,14 +1,15 @@
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView } from 'react-native';
-import { toast } from '@/components/Toast';
-import { Avatar, Button, Field, Header, Screen } from '@/components/ui';
+import * as ImagePicker from 'expo-image-picker';
+import { Pressable, ScrollView } from 'react-native';
+import { toast, toastError } from '@/components/Toast';
+import { Avatar, Button, Field, Header, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
 import { isApiError } from '@/lib/api/http';
 import type { MePatch } from '@/lib/api/types';
 import { useSession } from '@/lib/auth/session';
-import { space } from '@/theme/tokens';
+import { colors, fonts, space } from '@/theme/tokens';
 
 export default function EditProfile() {
   const me = useSession((s) => s.me);
@@ -18,6 +19,35 @@ export default function EditProfile() {
   const [bio, setBio] = useState(me?.bio ?? '');
   const [avatar, setAvatar] = useState(me?.avatar_url ?? '');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const [uploading, setUploading] = useState(false);
+
+  // Square-crop a photo, upload it straight to storage with a presigned URL,
+  // then keep the public URL to save with the profile.
+  async function pickPhoto() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      toast('Allow photo access to change your picture.', 'error');
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+    const a = res.canceled ? null : res.assets[0];
+    if (!a) return;
+    const type = a.mimeType === 'image/png' || a.mimeType === 'image/webp' ? a.mimeType : 'image/jpeg';
+    setUploading(true);
+    try {
+      const blob = await (await fetch(a.uri)).blob();
+      if (blob.size > 5 * 1024 * 1024) throw new Error('That photo is over 5 MB. Pick a smaller one.');
+      const up = await api.media.imageUpload('avatar', type, blob.size);
+      const put = await fetch(up.upload_url, { method: 'PUT', body: blob, headers: { 'Content-Type': type } });
+      if (!put.ok) throw new Error('Upload failed. Try again.');
+      setAvatar(up.url);
+    } catch (e) {
+      toastError(e);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const save = useMutation({
     mutationFn: () => {
@@ -44,7 +74,10 @@ export default function EditProfile() {
     <Screen edges={['top', 'bottom']}>
       <Header title="Edit profile" />
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, alignItems: 'stretch' }} keyboardShouldPersistTaps="handled">
-        <Avatar uri={avatar || null} name={name} size={88} />
+        <Pressable onPress={() => void pickPhoto()} style={{ alignSelf: 'center', alignItems: 'center', gap: space.sm }} accessibilityRole="button" accessibilityLabel="Change photo">
+          <Avatar uri={avatar || null} name={name} size={96} />
+          <Text style={{ color: colors.live, fontFamily: fonts.bodySemibold }}>{uploading ? 'Uploading…' : 'Change photo'}</Text>
+        </Pressable>
         <Field label="Name" value={name} onChangeText={setName} maxLength={50} error={fieldErrors.display_name} />
         <Field
           label="Username"
@@ -56,15 +89,8 @@ export default function EditProfile() {
           error={fieldErrors.handle}
         />
         <Field label="Bio" value={bio} onChangeText={setBio} maxLength={160} multiline error={fieldErrors.bio} />
-        <Field
-          label="Photo URL (https)"
-          value={avatar}
-          onChangeText={setAvatar}
-          autoCapitalize="none"
-          keyboardType="url"
-          error={fieldErrors.avatar_url}
-        />
-        <Button title="Save" loading={save.isPending} onPress={() => save.mutate()} />
+        {fieldErrors.avatar_url ? <Text style={{ color: colors.danger }}>{fieldErrors.avatar_url}</Text> : null}
+        <Button title="Save" loading={save.isPending} disabled={uploading} onPress={() => save.mutate()} />
       </ScrollView>
     </Screen>
   );
