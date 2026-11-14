@@ -139,19 +139,29 @@ export function useFollowers(userId: string, which: 'followers' | 'following') {
   });
 }
 
+/** The server accepts at most 50 impressions per call. */
+const IMPRESSION_BATCH = 50;
+
 /**
- * Collects watch time per video and flushes to /v1/feed/impressions in
- * batches (every 10 items, every 20 s, and when the app backgrounds).
+ * Collects finished views and flushes them to /v1/feed/impressions in
+ * batches (every 10 views, every 20 s, and when the app backgrounds).
+ * Callers report one view per video visit, with the total watch time
+ * across pauses; the recommender counts only the first view per video.
  */
 export function useImpressions() {
   const signedIn = useSignedIn();
   const buf = useRef<Impression[]>([]);
   const flush = useCallback(() => {
-    if (!signedIn || buf.current.length === 0) return;
-    const items = buf.current.splice(0, 100);
-    api.feed.impressions(items).catch(() => {
-      // Drop on failure; impressions are best-effort ranking signals.
-    });
+    if (!signedIn) {
+      buf.current = [];
+      return;
+    }
+    while (buf.current.length > 0) {
+      const items = buf.current.splice(0, IMPRESSION_BATCH);
+      api.feed.impressions(items).catch(() => {
+        // Drop on failure; impressions are best-effort ranking signals.
+      });
+    }
   }, [signedIn]);
 
   useEffect(() => {
@@ -165,13 +175,33 @@ export function useImpressions() {
   }, [flush]);
 
   return useCallback(
-    (video_id: string, watch_ms: number) => {
-      if (watch_ms < 500) return;
-      buf.current.push({ video_id, watch_ms: Math.round(watch_ms) });
+    (imp: Impression) => {
+      // Under 150 ms the video never really showed (fast scroll); quick
+      // swipes above that are kept, because "not for me" is a signal too.
+      if (imp.watch_ms < 150) return;
+      buf.current.push({ ...imp, watch_ms: Math.round(imp.watch_ms) });
       if (buf.current.length >= 10) flush();
     },
     [flush],
   );
+}
+
+/** Builds the impression for one visit to a video. */
+export function impressionFor(
+  item: { id: string; duration_ms: number; rec_source?: string; rec_arm?: string },
+  watchMs: number,
+  surface: Impression['surface'],
+  shared: boolean,
+): Impression {
+  return {
+    video_id: item.id,
+    watch_ms: watchMs,
+    skipped: watchMs < 1000 && (item.duration_ms === 0 || item.duration_ms > 3000),
+    shared: shared || undefined,
+    source: item.rec_source,
+    arm: item.rec_arm,
+    surface,
+  };
 }
 
 export function useStats() {

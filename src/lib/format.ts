@@ -18,8 +18,9 @@ export function duration(ms: number): string {
   return (h ? `${h}:` : '') + `${mm}:${String(sec).padStart(2, '0')}`;
 }
 
-export function timeAgo(iso: string, now = Date.now()): string {
-  const t = Date.parse(iso);
+/** Accepts an ISO timestamp or Unix seconds (the feed sends seconds). */
+export function timeAgo(when: string | number, now = Date.now()): string {
+  const t = typeof when === 'number' ? when * 1000 : Date.parse(when);
   if (!t) return '';
   const s = Math.max(0, Math.round((now - t) / 1000));
   if (s < 60) return 'now';

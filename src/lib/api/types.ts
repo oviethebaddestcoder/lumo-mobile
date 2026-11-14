@@ -346,12 +346,31 @@ export interface FeedItem {
   height: number;
   likes: number;
   comments: number;
-  created_at: string;
+  /** Unix seconds. */
+  created_at: number;
+  /** Why the feed picked it (co | follow | author | tag | hot | fresh); echo back on the impression. */
+  rec_source?: string;
+  /** Ranking A/B arm; echo back on the impression. */
+  rec_arm?: string;
 }
 
+export type FeedSurface = 'foryou' | 'following' | 'watch' | 'profile' | 'tag' | 'search';
+
+/** One finished view, sent when the viewer leaves the video. */
 export interface Impression {
   video_id: ID;
   watch_ms: number;
+  skipped?: boolean;
+  shared?: boolean;
+  source?: string;
+  arm?: string;
+  surface?: FeedSurface;
+}
+
+export interface Interest {
+  tag: string;
+  /** 0..1 */
+  weight: number;
 }
 
 // ---------- notifier ----------

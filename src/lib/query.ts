@@ -28,6 +28,7 @@ export const qk = {
   forYou: ['feed', 'foryou'] as const,
   followingFeed: ['feed', 'following'] as const,
   watchFeed: ['feed', 'watch'] as const,
+  interests: ['feed', 'interests'] as const,
   userVideos: (id: string, kind?: string) => ['media', 'user', id, kind ?? 'all'] as const,
   video: (id: string) => ['media', 'video', id] as const,
   rooms: (cat?: string | null) => ['live', 'rooms', cat ?? 'all'] as const,

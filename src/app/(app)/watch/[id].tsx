@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEvent } from 'expo';
 import { router, useLocalSearchParams } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CommentsSheet } from '@/components/CommentsSheet';
@@ -15,7 +16,7 @@ import { api } from '@/lib/api';
 import { useSession } from '@/lib/auth/session';
 import { config } from '@/lib/config';
 import { compact, timeAgo } from '@/lib/format';
-import { useCounts, useFollow, useImpressions, useLike, useRelationship, useUser, useVideoCounts } from '@/lib/hooks';
+import { impressionFor, useCounts, useFollow, useImpressions, useLike, useRelationship, useUser, useVideoCounts } from '@/lib/hooks';
 import { qk } from '@/lib/query';
 import { colors, fonts, radius, space } from '@/theme/tokens';
 
@@ -33,15 +34,33 @@ export default function WatchVideo() {
   const upNext = useQuery({ queryKey: [...qk.watchFeed, 'next', id], queryFn: () => api.feed.watch(10) });
   const [sheet, setSheet] = useState<'comments' | 'gift' | 'report' | null>(comments ? 'comments' : null);
   const onWatched = useImpressions();
-  const started = useRef(0);
 
   const ready = video.data?.status === 'ready' && !!video.data.hls_url;
   const player = useVideoPlayer(ready ? { uri: video.data!.hls_url!, contentType: 'hls' } : null, (p) => p.play());
 
+  // Count only time actually playing, summed across pauses, and report it
+  // once when the viewer leaves.
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  const playingSince = useRef<number | null>(null);
+  const watchedMs = useRef(0);
+  const shared = useRef(false);
   useEffect(() => {
-    started.current = Date.now();
-    return () => onWatched(id, Date.now() - started.current);
-  }, [id, onWatched]);
+    if (isPlaying) {
+      playingSince.current = Date.now();
+    } else if (playingSince.current) {
+      watchedMs.current += Date.now() - playingSince.current;
+      playingSince.current = null;
+    }
+  }, [isPlaying]);
+  const report = useEffectEvent(() => {
+    let ms = watchedMs.current;
+    if (playingSince.current) ms += Date.now() - playingSince.current;
+    watchedMs.current = 0;
+    playingSince.current = playingSince.current ? Date.now() : null;
+    onWatched(impressionFor({ id, duration_ms: video.data?.duration_ms ?? 0 }, ms, 'watch', shared.current));
+    shared.current = false;
+  });
+  useEffect(() => () => report(), [id]);
 
   if (video.isPending) return <Loading />;
   if (video.isError) return <ErrorView error={video.error} onRetry={() => void video.refetch()} />;
@@ -101,7 +120,14 @@ export default function WatchVideo() {
           <Pill
             icon="share"
             label="Share"
-            onPress={() => void Share.share({ message: `https://${config.webDomain}/watch/${v.id}` })}
+            onPress={() =>
+              void Share.share({ message: `https://${config.webDomain}/watch/${v.id}` }).then(
+                (r) => {
+                  if (r.action === Share.sharedAction) shared.current = true;
+                },
+                () => undefined,
+              )
+            }
           />
           {!isMine && me ? <Pill icon="flag" label="Report" onPress={() => setSheet('report')} /> : null}
         </ScrollView>

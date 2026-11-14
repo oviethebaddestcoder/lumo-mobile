@@ -38,6 +38,7 @@ export default function Settings() {
 
         <Section title="Preferences" />
         <ListRow label="Notifications" icon="send" onPress={() => router.push('/settings/notifications')} />
+        <ListRow label="Content preferences" icon="hash" onPress={() => router.push('/settings/interests')} />
         <ListRow label="Wallet" icon="coin" onPress={() => router.push('/wallet')} />
 
         <Section title="" />

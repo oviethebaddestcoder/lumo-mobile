@@ -1,7 +1,7 @@
 import { useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState, FlatList, RefreshControl, View, type ListViewToken } from 'react-native';
-import type { FeedItem } from '@/lib/api/types';
+import type { FeedItem, FeedSurface } from '@/lib/api/types';
 import { useImpressions, useVideoCounts } from '@/lib/hooks';
 import { colors } from '@/theme/tokens';
 import { FeedVideo } from './FeedVideo';
@@ -18,8 +18,10 @@ export function FeedPager({
   refreshing,
   onRefresh,
   ListEmptyComponent,
+  surface,
 }: {
   items: FeedItem[];
+  surface: FeedSurface;
   onEndReached: () => void;
   refreshing: boolean;
   onRefresh: () => void;
@@ -36,11 +38,16 @@ export function FeedPager({
   const focused = screenFocused && appActive;
 
   const onWatched = useImpressions();
+  // Videos the viewer marked "not interested" disappear at once; the next
+  // one slides into place.
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
+  const onHide = useCallback((id: string) => setHidden((h) => new Set(h).add(id)), []);
+  const visible = useMemo(() => (hidden.size ? items.filter((i) => !hidden.has(i.id)) : items), [items, hidden]);
 
   // Fetch like/comment counts for the window around the current page in one call.
   const windowIds = useMemo(
-    () => items.slice(Math.max(0, index - 1), index + 6).map((i) => i.id),
-    [items, index],
+    () => visible.slice(Math.max(0, index - 1), index + 6).map((i) => i.id),
+    [visible, index],
   );
   const counts = useVideoCounts(windowIds);
   const countsKey = windowIds.join(',');
@@ -60,17 +67,19 @@ export function FeedPager({
         counts={counts.data?.[item.id]}
         countsKey={countsKey}
         onWatched={onWatched}
+        surface={surface}
+        onHide={onHide}
         focused={focused}
       />
     ),
-    [height, index, counts.data, countsKey, onWatched, focused],
+    [height, index, counts.data, countsKey, onWatched, surface, onHide, focused],
   );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} onLayout={(e) => setHeight(Math.round(e.nativeEvent.layout.height))}>
       {height > 0 ? (
         <FlatList
-          data={items}
+          data={visible}
           keyExtractor={(i) => i.id}
           renderItem={renderItem}
           pagingEnabled

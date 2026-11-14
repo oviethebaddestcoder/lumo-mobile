@@ -134,6 +134,10 @@ export function endpoints(c: ApiClient, device: () => Promise<T.Device>) {
     watch: (limit = 20) => c.get<{ items: T.FeedItem[] }>('/v1/feed/watch', { query: { limit }, auth: 'optional' }),
     following: (cursor?: string) => c.get<T.Page<T.FeedItem>>('/v1/feed/following', { query: { cursor } }),
     impressions: (items: T.Impression[]) => c.post<void>('/v1/feed/impressions', { items }),
+    notInterested: (video_id: string) => c.post<void>('/v1/feed/not-interested', { video_id }),
+    interests: () => c.get<{ items: T.Interest[] }>('/v1/feed/me/interests'),
+    removeInterest: (tag: string) => c.del<void>(`/v1/feed/me/interests/${enc(tag)}`),
+    reset: () => c.post<void>('/v1/feed/me/reset', {}),
   };
 
   const notify = {

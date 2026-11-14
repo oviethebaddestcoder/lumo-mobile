@@ -3,20 +3,22 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
 import { config } from '@/lib/config';
-import type { FeedItem, VideoCounts } from '@/lib/api/types';
+import { api } from '@/lib/api';
+import type { FeedItem, FeedSurface, Impression, VideoCounts } from '@/lib/api/types';
 import { useSession } from '@/lib/auth/session';
 import { compact } from '@/lib/format';
-import { useFollow, useLike, useRelationship } from '@/lib/hooks';
+import { impressionFor, useFollow, useLike, useRelationship } from '@/lib/hooks';
 import { colors, fonts, space } from '@/theme/tokens';
 import { CommentsSheet } from './CommentsSheet';
 import { GiftSheet } from './GiftSheet';
 import { Icon } from './Icon';
 import { ReportSheet } from './ReportSheet';
-import { toast } from './Toast';
-import { Avatar, Text } from './ui';
+import { Sheet } from './Sheet';
+import { toast, toastError } from './Toast';
+import { Avatar, ListRow, Text } from './ui';
 
 interface Props {
   item: FeedItem;
@@ -27,12 +29,16 @@ interface Props {
   preload: boolean;
   counts?: VideoCounts;
   countsKey: string;
-  onWatched: (videoId: string, ms: number) => void;
+  onWatched: (imp: Impression) => void;
+  /** Which feed this is, for ranking analytics. */
+  surface: FeedSurface;
+  /** "Not interested": the pager hides the video and moves on. */
+  onHide?: (videoId: string) => void;
   /** Screen is focused and app in foreground. */
   focused: boolean;
 }
 
-function FeedVideoImpl({ item, height, active, preload, counts, countsKey, onWatched, focused }: Props) {
+function FeedVideoImpl({ item, height, active, preload, counts, countsKey, onWatched, surface, onHide, focused }: Props) {
   const me = useSession((s) => s.me);
   const signedIn = !!me;
   const player = useVideoPlayer(preload ? { uri: item.hls_url, contentType: 'hls' } : null, (p) => {
@@ -41,8 +47,30 @@ function FeedVideoImpl({ item, height, active, preload, counts, countsKey, onWat
   });
   const { status } = useEvent(player, 'statusChange', { status: player.status });
   const [paused, setPaused] = useState(false);
-  const [sheet, setSheet] = useState<'comments' | 'gift' | 'report' | null>(null);
+  const [sheet, setSheet] = useState<'comments' | 'gift' | 'report' | 'options' | null>(null);
+
+  // Watch time for this visit, summed across pauses, reported once when the
+  // viewer leaves the video (the recommender counts the first view only).
   const startedAt = useRef<number | null>(null);
+  const watchedMs = useRef(0);
+  const shared = useRef(false);
+  const takeWatched = () => {
+    let ms = watchedMs.current;
+    if (startedAt.current) ms += Date.now() - startedAt.current;
+    watchedMs.current = 0;
+    startedAt.current = null;
+    return ms;
+  };
+  const report = useEffectEvent(() => {
+    onWatched(impressionFor(item, takeWatched(), surface, shared.current));
+    shared.current = false;
+  });
+  useEffect(() => {
+    if (!active) return;
+    watchedMs.current = 0;
+    shared.current = false;
+    return () => report();
+  }, [active, item.id]);
 
   const playing = active && focused && !paused && sheet !== 'gift';
   useEffect(() => {
@@ -53,11 +81,11 @@ function FeedVideoImpl({ item, height, active, preload, counts, countsKey, onWat
     } else {
       player.pause();
       if (startedAt.current) {
-        onWatched(item.id, Date.now() - startedAt.current);
+        watchedMs.current += Date.now() - startedAt.current;
         startedAt.current = null;
       }
     }
-  }, [playing, preload, player, item.id, onWatched]);
+  }, [playing, preload, player]);
 
   // Leaving the page: clear a manual pause and rewind (adjust-state-during-render pattern).
   const [wasActive, setWasActive] = useState(active);
@@ -91,7 +119,10 @@ function FeedVideoImpl({ item, height, active, preload, counts, countsKey, onWat
       <Pressable
         style={StyleSheet.absoluteFill}
         onPress={() => setPaused((p) => !p)}
+        onLongPress={signedIn && !isMine ? () => setSheet('options') : undefined}
+        delayLongPress={350}
         accessibilityLabel={paused ? 'Play' : 'Pause'}
+        accessibilityHint={signedIn && !isMine ? 'Long press for more options' : undefined}
       >
         {preload ? (
           <VideoView
@@ -157,10 +188,15 @@ function FeedVideoImpl({ item, height, active, preload, counts, countsKey, onWat
           label="Share"
           a11y="Share"
           onPress={() =>
-            void Share.share({ message: `https://${config.webDomain}/v/${item.id}`, url: `https://${config.webDomain}/v/${item.id}` })
+            void Share.share({ message: `https://${config.webDomain}/v/${item.id}`, url: `https://${config.webDomain}/v/${item.id}` }).then(
+              (r) => {
+                if (r.action === Share.sharedAction) shared.current = true;
+              },
+              () => undefined,
+            )
           }
         />
-        {!isMine && signedIn ? <RailButton icon="more" label="" a11y="More" onPress={() => setSheet('report')} /> : null}
+        {!isMine && signedIn ? <RailButton icon="more" label="" a11y="More" onPress={() => setSheet('options')} /> : null}
       </View>
 
       {sheet === 'comments' ? (
@@ -177,6 +213,22 @@ function FeedVideoImpl({ item, height, active, preload, counts, countsKey, onWat
       ) : null}
       {sheet === 'report' ? (
         <ReportSheet visible onClose={() => setSheet(null)} targetType="video" targetId={item.id} />
+      ) : null}
+      {sheet === 'options' ? (
+        <Sheet visible onClose={() => setSheet(null)} title="More">
+          <ListRow
+            label="Not interested"
+            icon="eye"
+            onPress={() => {
+              setSheet(null);
+              api.feed.notInterested(item.id).then(() => {
+                toast("Got it. You'll see fewer videos like this.");
+                onHide?.(item.id);
+              }, toastError);
+            }}
+          />
+          <ListRow label="Report" icon="flag" danger onPress={() => setSheet('report')} />
+        </Sheet>
       ) : null}
     </View>
   );

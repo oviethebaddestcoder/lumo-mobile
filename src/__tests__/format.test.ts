@@ -1,4 +1,4 @@
-import { ageOn, compact, duration, isoDate, routeForPush } from '@/lib/format';
+import { ageOn, compact, duration, isoDate, routeForPush, timeAgo } from '@/lib/format';
 import { parseQrPayload } from '@/lib/qr';
 
 describe('format', () => {
@@ -36,5 +36,13 @@ describe('format', () => {
     expect(parseQrPayload('lumo://qr-login?id=01HZXQ8K2M')).toBe('01HZXQ8K2M');
     expect(parseQrPayload('https://evil.example/qr-login?id=01HZXQ8K2M')).toBeNull();
     expect(parseQrPayload('lumo://qr-login?id=short')).toBeNull();
+  });
+});
+
+describe('timeAgo with Unix seconds (feed items)', () => {
+  it('reads seconds, not milliseconds', () => {
+    const now = Date.UTC(2026, 10, 14, 12, 0, 0);
+    expect(timeAgo(now / 1000 - 90, now)).toBe('1m');
+    expect(timeAgo(now / 1000 - 3 * 3600, now)).toBe('3h');
   });
 });

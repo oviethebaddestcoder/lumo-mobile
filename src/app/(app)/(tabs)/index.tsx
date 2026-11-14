@@ -62,6 +62,7 @@ function ForYou() {
   return (
     <FeedPager
       items={items}
+      surface="foryou"
       refreshing={q.isRefetching && !q.isFetchingNextPage}
       onRefresh={() => void q.refetch()}
       onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && void q.fetchNextPage()}
@@ -83,6 +84,7 @@ function Following() {
   return (
     <FeedPager
       items={items}
+      surface="following"
       refreshing={q.isRefetching && !q.isFetchingNextPage}
       onRefresh={() => void q.refetch()}
       onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && void q.fetchNextPage()}
