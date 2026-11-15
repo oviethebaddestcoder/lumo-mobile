@@ -3,12 +3,13 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Alert, ScrollView, View } from 'react-native';
 import { toastError } from '@/components/Toast';
-import { Header, ListRow, Screen, Text } from '@/components/ui';
+import { Chip, Header, ListRow, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useSession } from '@/lib/auth/session';
-import { colors, space } from '@/theme/tokens';
+import { space, useTheme, useThemePref, type ThemePref } from '@/theme';
 
 export default function Settings() {
+  const { colors } = useTheme();
   const me = useSession((s) => s.me);
   const signOut = useSession((s) => s.signOut);
   const ended = useSession((s) => s.ended);
@@ -40,6 +41,9 @@ export default function Settings() {
         <ListRow label="Notifications" icon="send" onPress={() => router.push('/settings/notifications')} />
         <ListRow label="Content preferences" icon="hash" onPress={() => router.push('/settings/interests')} />
         <ListRow label="Wallet" icon="coin" onPress={() => router.push('/wallet')} />
+
+        <Section title="Appearance" />
+        <Appearance />
 
         <Section title="" />
         <ListRow
@@ -89,5 +93,27 @@ function Section({ title }: { title: string }) {
     <Text variant="caption" style={{ paddingHorizontal: space.lg, paddingTop: space.xl, paddingBottom: space.sm, textTransform: 'uppercase' }}>
       {title}
     </Text>
+  );
+}
+
+const APPEARANCE: [ThemePref, string][] = [
+  ['system', 'Same as phone'],
+  ['light', 'Light'],
+  ['dark', 'Dark'],
+];
+
+/** Light, dark or follow the phone. Videos and LIVE always stay dark. */
+function Appearance() {
+  const pref = useThemePref((s) => s.pref);
+  const set = useThemePref((s) => s.set);
+  return (
+    <View style={{ paddingHorizontal: space.lg, gap: space.sm }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+        {APPEARANCE.map(([v, label]) => (
+          <Chip key={v} label={label} active={pref === v} onPress={() => set(v)} />
+        ))}
+      </View>
+      <Text variant="caption">Videos and LIVE always play on a dark background.</Text>
+    </View>
   );
 }

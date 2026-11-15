@@ -1,17 +1,18 @@
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { Avatar, Empty, ErrorView, Header, Loading, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { InboxItem } from '@/lib/api/types';
 import { routeForPush, timeAgo } from '@/lib/format';
 import { qk } from '@/lib/query';
-import { colors, fonts, space } from '@/theme/tokens';
+import { fonts, space, makeStyles, useTheme } from '@/theme';
 
 /** Activity: new followers, comments, like milestones, cash-out updates. */
 export default function Inbox() {
+  const { colors } = useTheme();
   const qc = useQueryClient();
   const q = useInfiniteQuery({
     queryKey: qk.inbox,
@@ -53,6 +54,8 @@ export default function Inbox() {
 }
 
 function Row({ item }: { item: InboxItem }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const href = routeForPush({ ...item.data, type: item.data.type ?? item.kind });
   return (
     <Pressable
@@ -83,8 +86,8 @@ function Row({ item }: { item: InboxItem }) {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md },
   iconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.live },
-});
+}));

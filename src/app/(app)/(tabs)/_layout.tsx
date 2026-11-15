@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '@/components/Icon';
 import { Text } from '@/components/ui';
-import { colors, fonts } from '@/theme/tokens';
+import { fonts, makeStyles, ThemeScope, useTheme } from '@/theme';
 
 const TABS: Record<string, { label: string; icon: IconName }> = {
   index: { label: 'Home', icon: 'home' },
@@ -14,10 +14,22 @@ const TABS: Record<string, { label: string; icon: IconName }> = {
   me: { label: 'Me', icon: 'user' },
 };
 
-function TabBar({ state, navigateToTab }: BottomTabBarProps) {
+// Home (full-bleed video) and Create (camera) keep a black bar in either theme.
+function TabBar(props: BottomTabBarProps) {
+  const { scheme } = useTheme();
+  const route = props.state.routes[props.state.index]?.name;
+  const onVideo = route === 'index' || route === 'create';
+  return (
+    <ThemeScope scheme={onVideo ? 'dark' : scheme}>
+      <TabBarInner {...props} onVideo={onVideo} />
+    </ThemeScope>
+  );
+}
+
+function TabBarInner({ state, navigateToTab, onVideo }: BottomTabBarProps & { onVideo: boolean }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const insets = useSafeAreaInsets();
-  // Home sits on full-bleed video, so the bar is black there.
-  const onVideo = state.routes[state.index]?.name === 'index';
   return (
     <View style={[st.bar, { paddingBottom: insets.bottom || 8, backgroundColor: onVideo ? '#000' : colors.bg }]}>
       {state.routes.map((route, i) => {
@@ -31,7 +43,7 @@ function TabBar({ state, navigateToTab }: BottomTabBarProps) {
           return (
             <Pressable key={route.key} onPress={onPress} style={st.item} accessibilityRole="button" accessibilityLabel="Create">
               <View style={st.create}>
-                <Icon name="plus" size={22} strokeWidth={3} color={colors.text} />
+                <Icon name="plus" size={22} strokeWidth={3} color={colors.onLive} />
               </View>
             </Pressable>
           );
@@ -67,7 +79,7 @@ export default function TabsLayout() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   bar: {
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -84,4 +96,4 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

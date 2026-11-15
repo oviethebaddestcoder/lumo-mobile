@@ -1,5 +1,5 @@
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
-import { SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import { Newsreader_500Medium, Newsreader_600SemiBold } from '@expo-google-fonts/newsreader';
 import { QueryClientProvider, focusManager, onlineManager } from '@tanstack/react-query';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -14,7 +14,7 @@ import { bootstrap } from '@/lib/bootstrap';
 import { routeForPush } from '@/lib/format';
 import { onPushOpened } from '@/lib/push';
 import { queryClient } from '@/lib/query';
-import { colors } from '@/theme/tokens';
+import { ThemeProvider, useTheme, useThemePref } from '@/theme';
 
 bootstrap();
 
@@ -26,13 +26,26 @@ focusManager.setEventListener((handleFocus) => {
 onlineManager.setOnline(true);
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
+  );
+}
+
+function App() {
+  const { colors, scheme } = useTheme();
+  const loadTheme = useThemePref((s) => s.load);
+  useEffect(() => {
+    void loadTheme();
+  }, [loadTheme]);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
-    SpaceGrotesk_600SemiBold,
-    SpaceGrotesk_700Bold,
+    Newsreader_500Medium,
+    Newsreader_600SemiBold,
   });
   const status = useSession((s) => s.status);
   const guest = useSession((s) => s.guest);
@@ -57,7 +70,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="light" />
+          <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           {!ready ? (
             <View style={{ flex: 1, backgroundColor: colors.bg }}>
               <Loading />

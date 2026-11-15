@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import type { Room } from '@/lib/api/types';
 import { compact } from '@/lib/format';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme, ThemeScope } from '@/theme';
 import { Icon } from './Icon';
 import { Avatar, Text } from './ui';
 
@@ -17,7 +17,18 @@ const tint: Record<string, string> = {
   other: '#2A2A35',
 };
 
-export function RoomCard({ room }: { room: Room }) {
+/** LIVE tiles sit on a dark tint in both themes, so they use the dark palette. */
+export function RoomCard(props: { room: Room }) {
+  return (
+    <ThemeScope scheme="dark">
+      <RoomCardInner {...props} />
+    </ThemeScope>
+  );
+}
+
+function RoomCardInner({ room }: { room: Room }) {
+  const { colors } = useTheme();
+  const st = useSt();
   return (
     <Pressable
       onPress={() => router.push(`/live/${room.id}`)}
@@ -55,7 +66,7 @@ export function RoomCard({ room }: { room: Room }) {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   card: { flex: 1, aspectRatio: 3 / 4, borderRadius: radius.lg, padding: space.sm, overflow: 'hidden' },
   top: { flexDirection: 'row', gap: 4, alignItems: 'center' },
   live: { backgroundColor: colors.live, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 },
@@ -65,4 +76,4 @@ const st = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   bottom: { gap: 2 },
   title: { fontFamily: fonts.bodySemibold, fontSize: 13 },
-});
+}));

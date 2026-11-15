@@ -17,32 +17,42 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
-import { colors, fonts, radius, space, type } from '@/theme/tokens';
+import { fonts, makeStyles, maxContentWidth, radius, space, useStatusBar, useTheme, type Typography } from '@/theme';
 import { Icon, type IconName } from './Icon';
 
-type Variant = keyof typeof type;
+type Variant = keyof Typography;
 
 export function Text({ variant = 'body', style, ...rest }: TextProps & { variant?: Variant }) {
+  const { type } = useTheme();
   return <RNText {...rest} style={[type[variant], style]} />;
 }
 
+/**
+ * Page frame. Sets the status bar for the theme, and on tablets keeps the
+ * content in a readable centred column unless `fullWidth` (grids, video).
+ */
 export function Screen({
   children,
   edges = ['top'],
   style,
+  fullWidth,
 }: {
   children: ReactNode;
   edges?: Edge[];
   style?: StyleProp<ViewStyle>;
+  fullWidth?: boolean;
 }) {
+  const { colors } = useTheme();
+  useStatusBar();
   return (
     <SafeAreaView edges={edges} style={[{ flex: 1, backgroundColor: colors.bg }, style]}>
-      {children}
+      {fullWidth ? children : <View style={{ flex: 1, width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' }}>{children}</View>}
     </SafeAreaView>
   );
 }
 
 export function Header({ title, right, onBack }: { title?: string; right?: ReactNode; onBack?: () => void }) {
+  const s = useStyles();
   return (
     <View style={s.header}>
       <Pressable
@@ -80,6 +90,8 @@ export function Button({
   small?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { colors } = useTheme();
+  const s = useStyles();
   const bg = {
     primary: colors.live,
     secondary: colors.surface2,
@@ -87,7 +99,7 @@ export function Button({
     coin: colors.coin,
     danger: 'transparent',
   }[kind];
-  const fg = kind === 'coin' ? colors.onCoin : kind === 'danger' ? colors.danger : colors.text;
+  const fg = kind === 'primary' ? colors.onLive : kind === 'coin' ? colors.onCoin : kind === 'danger' ? colors.danger : colors.text;
   const off = disabled || loading;
   return (
     <Pressable
@@ -138,6 +150,7 @@ export function IconButton({
 }
 
 export function Avatar({ uri, name, size = 40, ring }: { uri?: string | null; name?: string; size?: number; ring?: string }) {
+  const { colors } = useTheme();
   const initial = (name ?? '?').trim().charAt(0).toUpperCase() || '?';
   return (
     <View
@@ -163,6 +176,8 @@ export function Avatar({ uri, name, size = 40, ring }: { uri?: string | null; na
 }
 
 export function Chip({ label, active, onPress }: { label: string; active?: boolean; onPress?: () => void }) {
+  const { colors } = useTheme();
+  const s = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -176,12 +191,15 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
 }
 
 export function Field({ label, error, style, ...rest }: TextInputProps & { label?: string; error?: string }) {
+  const { colors, scheme } = useTheme();
+  const s = useStyles();
   return (
     <View style={{ gap: 6 }}>
       {label ? <Text variant="label">{label}</Text> : null}
       <TextInput
         placeholderTextColor={colors.inactive}
         selectionColor={colors.live}
+        keyboardAppearance={scheme}
         {...rest}
         style={[s.input, error ? { borderColor: colors.danger } : null, style as StyleProp<TextStyle>]}
       />
@@ -203,6 +221,8 @@ export function ToggleRow({
   onChange: (v: boolean) => void;
   disabled?: boolean;
 }) {
+  const { colors } = useTheme();
+  const s = useStyles();
   return (
     <View style={s.row}>
       <View style={{ flex: 1 }}>
@@ -214,7 +234,7 @@ export function ToggleRow({
         onValueChange={onChange}
         disabled={disabled}
         trackColor={{ true: colors.live, false: colors.border }}
-        thumbColor={colors.text}
+        thumbColor="#FFFFFF"
       />
     </View>
   );
@@ -233,6 +253,8 @@ export function ListRow({
   onPress?: () => void;
   danger?: boolean;
 }) {
+  const { colors } = useTheme();
+  const s = useStyles();
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [s.row, pressed && { opacity: 0.7 }]}>
       {icon ? <Icon name={icon} size={20} color={danger ? colors.danger : colors.mutedStrong} /> : null}
@@ -243,6 +265,7 @@ export function ListRow({
 }
 
 export function Loading({ style }: { style?: StyleProp<ViewStyle> }) {
+  const { colors } = useTheme();
   return (
     <View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xl }, style]}>
       <ActivityIndicator color={colors.live} />
@@ -277,15 +300,16 @@ export function Empty({ title, hint, action }: { title: string; hint?: string; a
 }
 
 export function CoinAmount({ value, size = 14 }: { value: number | string; size?: number }) {
+  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
       <Icon name="coin" size={size + 2} />
-      <RNText style={{ color: colors.coin, fontFamily: fonts.bodySemibold, fontSize: size }}>{value}</RNText>
+      <RNText style={{ color: colors.coinText, fontFamily: fonts.bodySemibold, fontSize: size }}>{value}</RNText>
     </View>
   );
 }
 
-export const s = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -333,4 +357,4 @@ export const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-});
+}));

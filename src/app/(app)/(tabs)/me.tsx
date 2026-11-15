@@ -6,9 +6,11 @@ import { Button, CoinAmount, Empty, Screen, Text } from '@/components/ui';
 import { useSession } from '@/lib/auth/session';
 import { compact } from '@/lib/format';
 import { useBadges, useBalance, useStats } from '@/lib/hooks';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 
 export default function MeTab() {
+  const { colors } = useTheme();
+  const st = useSt();
   const me = useSession((s) => s.me);
   const balance = useBalance();
   const stats = useStats();
@@ -16,7 +18,7 @@ export default function MeTab() {
 
   if (!me) {
     return (
-      <Screen>
+      <Screen fullWidth>
         <Empty
           title="Your profile"
           hint="Sign in to post, go live and keep your coins and diamonds."
@@ -27,7 +29,7 @@ export default function MeTab() {
   }
 
   return (
-    <Screen>
+    <Screen fullWidth>
       <ProfileView
         user={me}
         header={
@@ -81,7 +83,7 @@ export default function MeTab() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.lg, paddingTop: space.sm },
   wallet: {
     flexDirection: 'row',
@@ -107,10 +109,11 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { fontSize: 10, fontFamily: fonts.bodyBold },
-});
+  badgeText: { fontSize: 10, fontFamily: fonts.bodyBold, color: colors.onLive },
+}));
 
 function BadgeIcon({ icon, count, label, onPress }: { icon: 'bell' | 'chat'; count: number; label: string; onPress: () => void }) {
+  const st = useSt();
   return (
     <Pressable onPress={onPress} accessibilityLabel={count ? `${label}, ${count} unread` : label} hitSlop={10}>
       <Icon name={icon} />

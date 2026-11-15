@@ -46,7 +46,7 @@ export default function UserProfile() {
   const guard = (fn: () => void) => () => (me ? fn() : router.push('/sign-in'));
 
   return (
-    <Screen>
+    <Screen fullWidth>
       <Header
         title={`@${u.handle}`}
         right={

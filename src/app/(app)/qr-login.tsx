@@ -5,13 +5,14 @@ import { Icon } from '@/components/Icon';
 import { toast, toastError } from '@/components/Toast';
 import { Button, ErrorView, Header, Loading, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
-import { colors, space } from '@/theme/tokens';
+import { space, useTheme } from '@/theme';
 
 /**
  * Approve a sign-in on another device. Reached from the scanner or the
  * lumo://qr-login?id=… deep link. Shows what is asking before approving.
  */
 export default function QrLogin() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const info = useQuery({ queryKey: ['qr', id], queryFn: () => api.identity.qrInfo(id), retry: false, gcTime: 0 });
   const approve = useMutation({

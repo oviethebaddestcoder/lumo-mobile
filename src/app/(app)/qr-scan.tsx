@@ -6,9 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Empty, IconButton, Screen, Text } from '@/components/ui';
 import { toast } from '@/components/Toast';
 import { parseQrPayload } from '@/lib/qr';
-import { colors, radius, space } from '@/theme/tokens';
+import { radius, space, makeStyles, darkScreen } from '@/theme';
 
-export default function QrScan() {
+function QrScan() {
+  const st = useSt();
   const [perm, request] = useCameraPermissions();
   const insets = useSafeAreaInsets();
   const handled = useRef(false);
@@ -53,7 +54,7 @@ export default function QrScan() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   top: { position: 'absolute', left: space.lg },
   frame: {
     position: 'absolute',
@@ -66,4 +67,6 @@ const st = StyleSheet.create({
     borderColor: colors.text,
   },
   hint: { position: 'absolute', alignSelf: 'center', textAlign: 'center' },
-});
+}));
+
+export default darkScreen(QrScan);

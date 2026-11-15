@@ -17,9 +17,10 @@ import { compact } from '@/lib/format';
 import { useFollow, useRelationship, useSignedIn } from '@/lib/hooks';
 import { qk } from '@/lib/query';
 import { useRoomEvents } from '@/lib/useRoomEvents';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, darkScreen } from '@/theme';
 
-export default function LiveRoomScreen() {
+function LiveRoomScreen() {
+  const st = useSt();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const me = useSession((s) => s.me);
@@ -162,7 +163,7 @@ export default function LiveRoomScreen() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   topRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.md },
   hostPill: {
     flexDirection: 'row',
@@ -184,4 +185,6 @@ const st = StyleSheet.create({
     paddingVertical: 5,
   },
   endedWrap: { alignItems: 'center', justifyContent: 'center', gap: space.lg, backgroundColor: colors.scrim, zIndex: 5 },
-});
+}));
+
+export default darkScreen(LiveRoomScreen);

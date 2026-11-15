@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FeedPager } from '@/components/FeedPager';
 import { Icon } from '@/components/Icon';
@@ -10,11 +10,12 @@ import { api } from '@/lib/api';
 import type { FeedItem } from '@/lib/api/types';
 import { useSignedIn } from '@/lib/hooks';
 import { qk } from '@/lib/query';
-import { colors, fonts, space } from '@/theme/tokens';
+import { fonts, space, makeStyles, darkScreen } from '@/theme';
 
 type Tab = 'following' | 'foryou';
 
-export default function Home() {
+function Home() {
+  const st = useSt();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('foryou');
   const signedIn = useSignedIn();
@@ -114,7 +115,7 @@ function dedupe(items: FeedItem[]): FeedItem[] {
   return items.filter((i) => (seen.has(i.id) ? false : (seen.add(i.id), true)));
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   top: {
     position: 'absolute',
     left: 0,
@@ -130,4 +131,6 @@ const st = StyleSheet.create({
   tab: { fontFamily: fonts.bodySemibold, fontSize: 16, color: 'rgba(255,255,255,0.65)' },
   tabOn: { color: colors.text },
   underline: { height: 2, width: 24, backgroundColor: colors.text, alignSelf: 'center', marginTop: 4, borderRadius: 1 },
-});
+}));
+
+export default darkScreen(Home);

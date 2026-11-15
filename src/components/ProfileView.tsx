@@ -1,11 +1,11 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useMemo, useState, type ReactNode } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import type { UserPublic, Video, VideoKind } from '@/lib/api/types';
 import { compact, duration } from '@/lib/format';
 import { useCounts, useLevels, useUserVideos } from '@/lib/hooks';
-import { colors, fonts, space } from '@/theme/tokens';
+import { fonts, space, makeStyles, useTheme, useLayout } from '@/theme';
 import { Icon } from './Icon';
 import { Avatar, Empty, Loading, Text } from './ui';
 
@@ -27,14 +27,17 @@ export function ProfileView({
   actions?: ReactNode;
   extra?: ReactNode;
 }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const [kind, setKind] = useState<VideoKind>('short');
   const counts = useCounts(user.id);
   const levels = useLevels([user.id]);
   const level = levels.data?.[user.id];
   const videos = useUserVideos(user.id, kind);
   const items = useMemo(() => videos.data?.pages.flatMap((p) => p.items) ?? [], [videos.data]);
-  const { width } = useWindowDimensions();
-  const cell = (width - 2) / 3;
+  // 3 across on phones, more on tablets; 1px gutters.
+  const { width, gridColumns: cols } = useLayout();
+  const cell = (width - (cols - 1)) / cols;
 
   const top = (
     <View>
@@ -86,7 +89,8 @@ export function ProfileView({
     <FlatList
       data={items}
       keyExtractor={(v) => v.id}
-      numColumns={3}
+      key={cols}
+      numColumns={cols}
       ListHeaderComponent={top}
       columnWrapperStyle={{ gap: 1 }}
       contentContainerStyle={{ gap: 1, paddingBottom: space.xxl }}
@@ -108,6 +112,8 @@ export function ProfileView({
 }
 
 function Thumb({ v, size }: { v: Video; size: number }) {
+  const { colors } = useTheme();
+  const st = useSt();
   return (
     <Pressable
       onPress={() => router.push(`/watch/${v.id}`)}
@@ -120,7 +126,7 @@ function Thumb({ v, size }: { v: Video; size: number }) {
           <Text style={st.badgeText}>{v.status === 'failed' ? 'Failed' : 'Processing'}</Text>
         ) : (
           <>
-            <Icon name="play" size={10} />
+            <Icon name="play" size={10} color={colors.onMedia} />
             <Text style={st.badgeText}>{v.kind === 'short' ? compact(v.views ?? 0) : duration(v.duration_ms)}</Text>
           </>
         )}
@@ -135,6 +141,7 @@ function Thumb({ v, size }: { v: Video; size: number }) {
 }
 
 export function LevelBadge({ level }: { level: number }) {
+  const st = useSt();
   return (
     <View style={st.level} accessibilityLabel={`Level ${level}`}>
       <Text style={st.levelText}>Lv{level}</Text>
@@ -151,14 +158,14 @@ function Stat({ value, label, onPress }: { value?: number; label: string; onPres
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   head: { alignItems: 'center', gap: space.sm, paddingVertical: space.lg },
   stats: { flexDirection: 'row', gap: space.xl, marginVertical: space.sm },
   tabs: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   tab: { flex: 1, alignItems: 'center', paddingVertical: space.md },
   tabOn: { borderBottomWidth: 2, borderBottomColor: colors.text },
   badge: { position: 'absolute', left: 4, bottom: 4, flexDirection: 'row', alignItems: 'center', gap: 3 },
-  badgeText: { fontSize: 11, fontFamily: fonts.bodySemibold },
+  badgeText: { fontSize: 11, fontFamily: fonts.bodySemibold, color: colors.onMedia, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 3 },
   level: { backgroundColor: colors.coin, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   levelText: { color: colors.onCoin, fontFamily: fonts.bodyBold, fontSize: 11 },
-});
+}));

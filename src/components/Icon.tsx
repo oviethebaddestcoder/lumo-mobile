@@ -1,5 +1,5 @@
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { colors } from '@/theme/tokens';
+import { useTheme } from '@/theme';
 
 export type IconName =
   | 'home'
@@ -43,7 +43,9 @@ interface Props {
 }
 
 /** Line icons drawn for Lumo (24px grid). */
-export function Icon({ name, size = 24, color = colors.text, strokeWidth = 2 }: Props) {
+export function Icon({ name, size = 24, color: given, strokeWidth = 2 }: Props) {
+  const { colors } = useTheme();
+  const color = given ?? colors.text;
   const p = { stroke: color, strokeWidth, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   const body = (() => {
     switch (name) {

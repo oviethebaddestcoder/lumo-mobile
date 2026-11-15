@@ -1,11 +1,12 @@
 import { Stack, router } from 'expo-router';
 import { useEffect } from 'react';
 import { useSession } from '@/lib/auth/session';
-import { colors } from '@/theme/tokens';
+import { useTheme } from '@/theme';
 
 export const unstable_settings = { initialRouteName: '(tabs)' };
 
 export default function AppLayout() {
+  const { colors } = useTheme();
   const pickTopics = useSession((s) => s.pickTopics && s.status === 'signedIn');
   // New accounts pick topics once, so the very first For You page fits them.
   useEffect(() => {

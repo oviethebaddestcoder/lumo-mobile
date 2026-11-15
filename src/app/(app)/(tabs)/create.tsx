@@ -13,11 +13,12 @@ import { useSession } from '@/lib/auth/session';
 import { hostHandoff, uploadHandoff } from '@/lib/handoff';
 import { useSignedIn } from '@/lib/hooks';
 import { qk } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, darkScreen } from '@/theme';
 
 type Mode = 'live' | 'short' | 'upload';
 
-export default function Create() {
+function Create() {
+  const st = useSt();
   const signedIn = useSignedIn();
   const [mode, setMode] = useState<Mode>('live');
   if (!signedIn) {
@@ -46,6 +47,7 @@ export default function Create() {
 }
 
 function GoLive() {
+  const st = useSt();
   const me = useSession((s) => s.me);
   const cats = useQuery({ queryKey: qk.categories, queryFn: api.live.categories, staleTime: Infinity });
   const [title, setTitle] = useState('');
@@ -197,7 +199,7 @@ function PickVideo({ mode }: { mode: 'short' | 'upload' }) {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   modes: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -210,4 +212,6 @@ const st = StyleSheet.create({
   modeOn: { color: colors.text },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden' },
-});
+}));
+
+export default darkScreen(Create);

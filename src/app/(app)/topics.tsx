@@ -7,7 +7,7 @@ import { Button, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useSession } from '@/lib/auth/session';
 import { qk } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles } from '@/theme';
 
 /** Shown until the catalogue has enough tagged videos to suggest its own. */
 const STARTER = ['comedy', 'music', 'dance', 'cooking', 'football', 'fashion', 'beauty', 'tech', 'gaming', 'skits', 'afrobeats', 'education', 'travel', 'fitness', 'cars', 'pets'];
@@ -18,6 +18,7 @@ const STARTER = ['comedy', 'music', 'dance', 'cooking', 'football', 'fashion', '
  * doubled how often new viewers finish videos on their first pages).
  */
 export default function TopicsScreen() {
+  const st = useSt();
   const qc = useQueryClient();
   const done = useSession((s) => s.topicsDone);
   const topics = useQuery({ queryKey: ['feed', 'topics'], queryFn: api.feed.topics, staleTime: 5 * 60_000 });
@@ -76,7 +77,7 @@ export default function TopicsScreen() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   body: { padding: space.lg, gap: space.md, paddingTop: space.xl },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.md },
   chip: {
@@ -89,6 +90,6 @@ const st = StyleSheet.create({
   },
   chipOn: { backgroundColor: colors.live, borderColor: colors.live },
   chipText: { fontFamily: fonts.bodySemibold, fontSize: 15 },
-  chipTextOn: { color: '#fff' },
+  chipTextOn: { color: colors.onLive },
   footer: { padding: space.lg, gap: space.sm },
-});
+}));

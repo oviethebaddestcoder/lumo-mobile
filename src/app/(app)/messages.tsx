@@ -1,16 +1,17 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useMemo } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { Avatar, Empty, ErrorView, Header, Loading, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { Conversation } from '@/lib/api/types';
 import { timeAgo } from '@/lib/format';
 import { onMeEvent, onMeReconnect } from '@/lib/meChannel';
 import { qk } from '@/lib/query';
-import { colors, fonts, space } from '@/theme/tokens';
+import { fonts, space, makeStyles, useTheme } from '@/theme';
 
 export default function Messages() {
+  const { colors } = useTheme();
   const q = useInfiniteQuery({
     queryKey: qk.conversations,
     queryFn: ({ pageParam }) => api.dm.conversations(pageParam),
@@ -54,6 +55,8 @@ export default function Messages() {
 }
 
 function Row({ c }: { c: Conversation }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const unread = c.unread > 0;
   return (
     <Pressable
@@ -77,14 +80,14 @@ function Row({ c }: { c: Conversation }) {
       </View>
       {unread ? (
         <View style={st.count}>
-          <Text style={{ fontSize: 11, fontFamily: fonts.bodyBold }}>{c.unread > 99 ? '99+' : c.unread}</Text>
+          <Text style={{ fontSize: 11, fontFamily: fonts.bodyBold, color: colors.onLive }}>{c.unread > 99 ? '99+' : c.unread}</Text>
         </View>
       ) : null}
     </Pressable>
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md },
   count: {
     minWidth: 22,
@@ -95,4 +98,4 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

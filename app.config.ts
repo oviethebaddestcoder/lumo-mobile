@@ -21,14 +21,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'lumo',
   scheme: 'lumo',
   version: '1.0.0',
+  // Portrait everywhere; on tablets the layouts widen (see useLayout).
   orientation: 'portrait',
   icon: './assets/icon.png',
-  userInterfaceStyle: 'dark',
-  backgroundColor: '#0B0B0F',
+  // Follows the phone's light/dark setting; Settings → Appearance overrides.
+  userInterfaceStyle: 'automatic',
+  backgroundColor: '#FAF9F7',
   experiments: { typedRoutes: true },
   ios: {
     bundleIdentifier: bundleId,
-    supportsTablet: false,
+    supportsTablet: true,
+    // iPad split-screen would force every orientation; keep it full screen.
+    requireFullScreen: true,
     usesAppleSignIn: true,
     googleServicesFile: env('GOOGLE_SERVICE_INFO_PLIST', './firebase/GoogleService-Info.plist'),
     associatedDomains: [`applinks:${env('EXPO_PUBLIC_WEB_DOMAIN', 'lumo.app')}`],
@@ -75,6 +79,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     'expo-web-browser',
     'expo-font',
+    'expo-system-ui',
     'expo-localization',
     'expo-sharing',
     'expo-apple-authentication',

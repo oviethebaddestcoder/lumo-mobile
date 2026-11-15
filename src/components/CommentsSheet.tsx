@@ -7,7 +7,7 @@ import { useSession } from '@/lib/auth/session';
 import { timeAgo } from '@/lib/format';
 import { useComments } from '@/lib/hooks';
 import { qk } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 import { Icon } from './Icon';
 import { ReportSheet } from './ReportSheet';
 import { Sheet } from './Sheet';
@@ -25,6 +25,8 @@ export function CommentsSheet({
   onClose: () => void;
   count?: number;
 }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const me = useSession((s) => s.me);
   const qc = useQueryClient();
   const q = useComments(videoId);
@@ -140,7 +142,7 @@ export function CommentsSheet({
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   row: { flexDirection: 'row', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.sm },
   composer: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, padding: space.md, gap: 6 },
   replying: { alignSelf: 'flex-start' },
@@ -154,4 +156,4 @@ const st = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 15,
   },
-});
+}));

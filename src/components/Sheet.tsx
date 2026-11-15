@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, radius, space } from '@/theme/tokens';
+import { radius, space, makeStyles } from '@/theme';
 import { Text } from './ui';
 
 /** Bottom sheet built on Modal: gift picker, comments, report, PK invite. */
@@ -18,6 +18,7 @@ export function Sheet({
   children: ReactNode;
   height?: number | `${number}%`;
 }) {
+  const st = useSt();
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
@@ -37,7 +38,7 @@ export function Sheet({
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: colors.overlay },
   wrap: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
@@ -54,4 +55,4 @@ const st = StyleSheet.create({
     backgroundColor: colors.border,
     marginBottom: space.md,
   },
-});
+}));

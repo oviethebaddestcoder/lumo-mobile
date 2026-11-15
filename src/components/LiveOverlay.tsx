@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, Pressable, TextInput, View } from 'react-native';
 import { emojiFor } from './GiftSheet';
 import type { ChatLine, PkState, RoomLive } from '@/lib/useRoomEvents';
 import { compact } from '@/lib/format';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 import { Icon } from './Icon';
 import { Avatar, Text } from './ui';
 
 export function ChatList({ lines }: { lines: ChatLine[] }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const ref = useRef<FlatList<ChatLine>>(null);
   return (
     <FlatList
@@ -33,6 +35,7 @@ export function ChatList({ lines }: { lines: ChatLine[] }) {
 }
 
 export function GiftBanners({ gifts, onDone }: { gifts: RoomLive['gifts']; onDone: (key: string) => void }) {
+  const st = useSt();
   return (
     <View style={st.banners} pointerEvents="none">
       {gifts.slice(-2).map((g) => (
@@ -43,6 +46,7 @@ export function GiftBanners({ gifts, onDone }: { gifts: RoomLive['gifts']; onDon
 }
 
 function GiftBanner({ g, onDone }: { g: RoomLive['gifts'][number]; onDone: () => void }) {
+  const st = useSt();
   useEffect(() => {
     const t = setTimeout(onDone, 3500);
     return () => clearTimeout(t);
@@ -65,6 +69,8 @@ function GiftBanner({ g, onDone }: { g: RoomLive['gifts'][number]; onDone: () =>
 }
 
 export function GoalBar({ goal, label }: { goal: { coins: number; target: number }; label?: string }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const pct = goal.target > 0 ? Math.min(1, goal.coins / goal.target) : 0;
   return (
     <View style={st.goal}>
@@ -84,6 +90,8 @@ export function GoalBar({ goal, label }: { goal: { coins: number; target: number
 }
 
 export function PkBar({ pk, roomId }: { pk: PkState; roomId: string }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const now = useNow();
   const mineIsA = pk.room_a === roomId;
   const mine = mineIsA ? pk.score_a : pk.score_b;
@@ -127,6 +135,8 @@ export function ChatInput({
   disabled?: boolean;
   extra?: React.ReactNode;
 }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const [text, setText] = useState('');
   const submit = () => {
     if (onSend(text)) setText('');
@@ -169,7 +179,7 @@ function useNow(intervalMs = 1000) {
   return now;
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   chat: { maxHeight: 240, width: '78%' },
   line: { alignSelf: 'flex-start', backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: radius.md, paddingHorizontal: 10, paddingVertical: 5 },
   lineText: { fontSize: 13 },
@@ -225,4 +235,4 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

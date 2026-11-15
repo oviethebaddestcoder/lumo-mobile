@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
-import { colors, radius, space } from '@/theme/tokens';
+import { radius, space, makeStyles, useTheme } from '@/theme';
 import { Text } from './ui';
 
 interface ToastState {
@@ -24,6 +24,8 @@ export const toast = (message: string, tone: ToastState['tone'] = 'info') => use
 export const toastError = (e: unknown) => toast(e instanceof Error ? e.message : 'Something went wrong.', 'error');
 
 export function ToastHost() {
+  const { colors } = useTheme();
+  const st = useSt();
   const { message, tone, hide } = useToast();
   const insets = useSafeAreaInsets();
   useEffect(() => {
@@ -44,7 +46,7 @@ export function ToastHost() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   wrap: { position: 'absolute', left: space.lg, right: space.lg, alignItems: 'center', zIndex: 1000 },
   toast: {
     backgroundColor: colors.surface2,
@@ -54,4 +56,4 @@ const st = StyleSheet.create({
     paddingVertical: space.md,
     paddingHorizontal: space.lg,
   },
-});
+}));

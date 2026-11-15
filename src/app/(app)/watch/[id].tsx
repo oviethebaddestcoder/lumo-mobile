@@ -18,9 +18,11 @@ import { config } from '@/lib/config';
 import { compact, timeAgo } from '@/lib/format';
 import { impressionFor, useCounts, useFollow, useImpressions, useLike, useRelationship, useUser, useVideoCounts } from '@/lib/hooks';
 import { qk } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme, darkScreen, fill } from '@/theme';
 
-export default function WatchVideo() {
+function WatchVideo() {
+  const { colors } = useTheme();
+  const st = useSt();
   const { id, comments } = useLocalSearchParams<{ id: string; comments?: string }>();
   const insets = useSafeAreaInsets();
   const me = useSession((s) => s.me);
@@ -75,7 +77,7 @@ export default function WatchVideo() {
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
       <View style={[st.player, portrait && { aspectRatio: 9 / 12 }]}>
         {ready ? (
-          <VideoView player={player} style={StyleSheet.absoluteFill} nativeControls contentFit="contain" allowsPictureInPicture />
+          <VideoView player={player} style={fill} nativeControls contentFit="contain" allowsPictureInPicture />
         ) : (
           <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
             <Text variant="bodyMuted">{v.status === 'failed' ? 'This video could not be processed.' : 'Processing…'}</Text>
@@ -174,6 +176,8 @@ function Pill({
   onPress: () => void;
   active?: boolean;
 }) {
+  const { colors } = useTheme();
+  const st = useSt();
   return (
     <Pressable onPress={onPress} style={st.pill} accessibilityRole="button" accessibilityLabel={label}>
       <Icon name={icon} size={18} color={active ? colors.live : colors.text} />
@@ -182,7 +186,7 @@ function Pill({
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   player: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000' },
   back: { position: 'absolute', top: space.sm, left: space.sm, padding: 4 },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
@@ -196,4 +200,6 @@ const st = StyleSheet.create({
     paddingVertical: 8,
   },
   desc: { backgroundColor: colors.surface, borderRadius: radius.md, padding: space.md },
-});
+}));
+
+export default darkScreen(WatchVideo);

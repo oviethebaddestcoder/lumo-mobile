@@ -1,15 +1,16 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View, type TextInputInstance } from 'react-native';
+import { Pressable, TextInput, View, type TextInputInstance } from 'react-native';
 import { toast, toastError } from '@/components/Toast';
 import { Button, Header, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useSignIn } from '@/lib/auth/useSignIn';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles } from '@/theme';
 
 const LEN = 6;
 
 export default function Verify() {
+  const st = useSt();
   const { channel, target } = useLocalSearchParams<{ channel: 'sms' | 'email'; target: string }>();
   const { busy, withOtp } = useSignIn();
   const [code, setCode] = useState('');
@@ -76,7 +77,7 @@ export default function Verify() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   boxes: { flexDirection: 'row', justifyContent: 'space-between' },
   box: {
     width: 48,
@@ -91,4 +92,4 @@ const st = StyleSheet.create({
   boxActive: { borderColor: colors.live },
   digit: { fontFamily: fonts.heading, fontSize: 24 },
   hidden: { position: 'absolute', opacity: 0, height: 1, width: 1 },
-});
+}));

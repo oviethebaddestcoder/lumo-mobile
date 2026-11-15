@@ -10,7 +10,7 @@ import { useSession } from '@/lib/auth/session';
 import { newIdempotencyKey } from '@/lib/device';
 import { useBackpack, useBalance, useCatalog } from '@/lib/hooks';
 import { qk } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 import { Icon } from './Icon';
 import { Sheet } from './Sheet';
 import { toast, toastError } from './Toast';
@@ -42,6 +42,8 @@ interface Props {
 }
 
 export function GiftSheet({ visible, onClose, receiverId, roomId, videoId, onSent }: Props) {
+  const { colors } = useTheme();
+  const st = useSt();
   const me = useSession((s) => s.me);
   const catalog = useCatalog();
   const balance = useBalance();
@@ -235,7 +237,7 @@ export function GiftSheet({ visible, onClose, receiverId, roomId, videoId, onSen
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   tabs: { flexDirection: 'row', alignItems: 'center', gap: space.lg, paddingHorizontal: space.lg, marginBottom: space.md },
   tab: { color: colors.muted, fontFamily: fonts.bodySemibold },
   tabActive: { color: colors.text },
@@ -281,6 +283,6 @@ const st = StyleSheet.create({
   qtys: { flexDirection: 'row', gap: space.sm },
   qty: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill, backgroundColor: colors.surface2 },
   qtyOn: { backgroundColor: colors.text },
-});
+}));
 
 const isSelfCheck = (me: string | undefined, receiver: string) => !!me && me === receiver;

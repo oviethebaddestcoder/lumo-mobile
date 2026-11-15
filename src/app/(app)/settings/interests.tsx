@@ -6,13 +6,15 @@ import { Button, Empty, ErrorView, Header, Loading, Screen, Text } from '@/compo
 import { api } from '@/lib/api';
 import type { Interest } from '@/lib/api/types';
 import { qk } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 
 /**
  * Content preferences: the hashtags shaping For You (remove any), and
  * "Refresh your For You feed" to start over.
  */
 export default function InterestsScreen() {
+  const { colors } = useTheme();
+  const st = useSt();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: qk.interests, queryFn: api.feed.interests });
   const refreshFeeds = () => {
@@ -94,7 +96,7 @@ export default function InterestsScreen() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   chip: {
     flexDirection: 'row',
@@ -108,4 +110,4 @@ const st = StyleSheet.create({
     borderColor: colors.border,
   },
   chipText: { fontFamily: fonts.bodySemibold, fontSize: 14 },
-});
+}));

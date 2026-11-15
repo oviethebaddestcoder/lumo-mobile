@@ -6,9 +6,10 @@ import { api } from '@/lib/api';
 import type { OAuthProvider } from '@/lib/api/types';
 import { availableProviders, isCancelled, providerCredential, providerLabels } from '@/lib/auth/providers';
 import { useSession } from '@/lib/auth/session';
-import { colors, space } from '@/theme/tokens';
+import { space, makeStyles } from '@/theme';
 
 export default function LinkedAccounts() {
+  const st = useSt();
   const me = useSession((s) => s.me);
   const refreshMe = useSession((s) => s.refreshMe);
   const [providers, setProviders] = useState<OAuthProvider[]>([]);
@@ -89,7 +90,7 @@ export default function LinkedAccounts() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -98,4 +99,4 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-});
+}));

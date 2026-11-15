@@ -6,7 +6,7 @@ import { Empty, ErrorView, Header, Loading, Screen, Text } from '@/components/ui
 import { api } from '@/lib/api';
 import type { LedgerEntry } from '@/lib/api/types';
 import { qk } from '@/lib/query';
-import { colors, fonts, space } from '@/theme/tokens';
+import { fonts, space, makeStyles, useTheme } from '@/theme';
 
 const kindLabel: Record<string, string> = {
   purchase: 'Bought coins',
@@ -48,6 +48,8 @@ export default function History() {
 }
 
 function Row({ e }: { e: LedgerEntry }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const positive = e.amount > 0;
   const coin = e.currency === 'coins';
   return (
@@ -65,7 +67,7 @@ function Row({ e }: { e: LedgerEntry }) {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -75,4 +77,4 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-});
+}));

@@ -19,9 +19,9 @@ import { compact } from '@/lib/format';
 import { hostHandoff } from '@/lib/handoff';
 import { useRooms } from '@/lib/hooks';
 import { useRoomEvents } from '@/lib/useRoomEvents';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme, darkScreen } from '@/theme';
 
-export default function HostScreen() {
+function HostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const handoff = useMemo(() => hostHandoff.take(id), [id]);
   const room = useQuery({ queryKey: ['live', 'room', id], queryFn: () => api.live.room(id), initialData: handoff?.room });
@@ -64,6 +64,8 @@ export default function HostScreen() {
 }
 
 function HostOverlay({ room, connection, inRoom }: { room: Room; connection: Connection; inRoom?: boolean }) {
+  const { colors } = useTheme();
+  const st = useSt();
   const insets = useSafeAreaInsets();
   const me = useSession((s) => s.me);
   const live = useRoomEvents(room.id);
@@ -204,6 +206,7 @@ function CrossPublisher({ cross }: { cross: { url: string; token: string } | nul
 }
 
 function HostControls() {
+  const st = useSt();
   const { localParticipant, isMicrophoneEnabled } = useLocalParticipant();
   const [front, setFront] = useState(true);
   const flip = async () => {
@@ -230,6 +233,7 @@ function HostControls() {
 }
 
 function PkInviteSheet({ roomId, onClose }: { roomId: string; onClose: () => void }) {
+  const st = useSt();
   const rooms = useRooms(null);
   const invite = useMutation({
     mutationFn: (to: string) => api.live.pkInvite(to),
@@ -265,7 +269,7 @@ function PkInviteSheet({ roomId, onClose }: { roomId: string; onClose: () => voi
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   topRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.md },
   pill: {
     flexDirection: 'row',
@@ -289,4 +293,6 @@ const st = StyleSheet.create({
   rtmp: { margin: space.md, backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm },
   inviteRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.sm },
   ended: { alignItems: 'center', justifyContent: 'center', gap: space.lg, backgroundColor: colors.scrim },
-});
+}));
+
+export default darkScreen(HostScreen);

@@ -3,9 +3,11 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Avatar, Empty, ErrorView, Header, Loading, Screen, Text } from '@/components/ui';
 import { useFollowers } from '@/lib/hooks';
-import { colors, fonts, space } from '@/theme/tokens';
+import { fonts, space, makeStyles, useTheme } from '@/theme';
 
 export default function Follows() {
+  const { colors } = useTheme();
+  const st = useSt();
   const { id, tab: initial } = useLocalSearchParams<{ id: string; tab?: 'followers' | 'following' }>();
   const [tab, setTab] = useState<'followers' | 'following'>(initial === 'following' ? 'following' : 'followers');
   const q = useFollowers(id, tab);
@@ -48,9 +50,9 @@ export default function Follows() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   tabs: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   tab: { flex: 1, alignItems: 'center', paddingVertical: space.md },
   on: { borderBottomWidth: 2, borderBottomColor: colors.text },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.sm },
-});
+}));

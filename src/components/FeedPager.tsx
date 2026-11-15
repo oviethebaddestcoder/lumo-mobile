@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState, FlatList, RefreshControl, View, type ListViewToken } from 'react-native';
 import type { FeedItem, FeedSurface } from '@/lib/api/types';
 import { useImpressions, useVideoCounts } from '@/lib/hooks';
-import { colors } from '@/theme/tokens';
+import { useTheme } from '@/theme';
 import { FeedVideo } from './FeedVideo';
 
 const PRELOAD_AHEAD = 2;
@@ -27,6 +27,7 @@ export function FeedPager({
   onRefresh: () => void;
   ListEmptyComponent?: React.ReactElement;
 }) {
+  const { colors } = useTheme();
   const [height, setHeight] = useState(0);
   const [index, setIndex] = useState(0);
   const screenFocused = useIsFocused();

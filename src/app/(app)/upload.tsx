@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { toast, toastError } from '@/components/Toast';
 import { Button, Chip, Empty, Field, Header, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -14,11 +14,12 @@ import { duration } from '@/lib/format';
 import { uploadHandoff } from '@/lib/handoff';
 import { qk } from '@/lib/query';
 import { contentTypeFor, uploadVideo, type UploadProgress } from '@/lib/uploader';
-import { colors, radius, space } from '@/theme/tokens';
+import { radius, space, makeStyles, fill } from '@/theme';
 
 const SHORT_MAX_MS = 180_000;
 
 export default function Upload() {
+  const st = useSt();
   const { kind: requested } = useLocalSearchParams<{ kind?: 'short' | 'auto' }>();
   const picked = useMemo(() => uploadHandoff.take(), []);
   const me = useSession((s) => s.me);
@@ -85,7 +86,7 @@ export default function Upload() {
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', gap: space.md }}>
           <View style={st.preview}>
-            <VideoView player={preview} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
+            <VideoView player={preview} style={fill} contentFit="cover" nativeControls={false} />
           </View>
           <View style={{ flex: 1, gap: space.sm }}>
             <Text variant="caption">
@@ -133,8 +134,8 @@ export default function Upload() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   preview: { width: 96, height: 128, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surface2 },
   track: { height: 8, borderRadius: 4, backgroundColor: colors.surface2, overflow: 'hidden' },
   fill: { height: 8, backgroundColor: colors.live },
-});
+}));

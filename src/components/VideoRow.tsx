@@ -3,11 +3,12 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { FeedItem } from '@/lib/api/types';
 import { duration, timeAgo } from '@/lib/format';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles } from '@/theme';
 import { Avatar, Text } from './ui';
 
 /** A long-form video card for the Watch tab and "Up next". */
 export function VideoRow({ item, compact: small }: { item: FeedItem; compact?: boolean }) {
+  const st = useSt();
   return (
     <Pressable
       onPress={() => router.push(`/watch/${item.id}`)}
@@ -20,7 +21,7 @@ export function VideoRow({ item, compact: small }: { item: FeedItem; compact?: b
           <Image source={{ uri: item.thumbnail_url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
         ) : null}
         <View style={st.dur}>
-          <Text style={{ fontSize: 11, fontFamily: fonts.bodySemibold }}>{duration(item.duration_ms)}</Text>
+          <Text style={{ fontSize: 11, fontFamily: fonts.bodySemibold, color: '#FFFFFF' }}>{duration(item.duration_ms)}</Text>
         </View>
       </View>
       <View style={small ? { flex: 1, gap: 4 } : st.meta}>
@@ -38,7 +39,7 @@ export function VideoRow({ item, compact: small }: { item: FeedItem; compact?: b
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   row: { gap: space.sm, marginBottom: space.lg },
   rowSmall: { flexDirection: 'row', gap: space.md, marginBottom: space.md },
   thumb: { aspectRatio: 16 / 9, backgroundColor: colors.surface2, overflow: 'hidden' },
@@ -52,4 +53,4 @@ const st = StyleSheet.create({
     paddingHorizontal: 4,
   },
   meta: { flexDirection: 'row', gap: space.md, paddingHorizontal: space.lg },
-});
+}));

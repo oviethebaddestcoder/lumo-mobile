@@ -8,13 +8,15 @@ import { Button, ErrorView, Field, Header, Loading, Screen, Text } from '@/compo
 import { api } from '@/lib/api';
 import type { Bank } from '@/lib/api/types';
 import { qk } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 
 /**
  * Add or change the bank account for cash-outs. The bank confirms the
  * account name before it's saved; only the last 4 digits are shown later.
  */
 export default function BankAccount() {
+  const { colors } = useTheme();
+  const st = useSt();
   const qc = useQueryClient();
   const current = useQuery({ queryKey: qk.payoutAccount, queryFn: api.wallet.payoutAccount });
   const banks = useQuery({ queryKey: qk.banks, queryFn: api.wallet.banks, staleTime: 60 * 60_000 });
@@ -105,7 +107,7 @@ export default function BankAccount() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.lg, gap: 2 },
   picker: {
     backgroundColor: colors.surface,
@@ -116,4 +118,4 @@ const st = StyleSheet.create({
     paddingVertical: 15,
   },
   bankRow: { paddingHorizontal: space.lg, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-});
+}));

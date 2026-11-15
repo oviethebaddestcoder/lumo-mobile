@@ -63,7 +63,8 @@ export function endpoints(c: ApiClient, device: () => Promise<T.Device>) {
     backpack: () => c.get<T.Backpack>('/v1/wallet/backpack'),
     checkin: () => c.post<T.CheckinResult>('/v1/wallet/checkin'),
     banks: () => c.get<{ items: T.Bank[] }>('/v1/wallet/banks'),
-    payoutAccount: () => c.get<{ account: T.PayoutAccount | null }>('/v1/wallet/payout-account'),
+    payoutAccount: () =>
+      c.get<{ account: T.PayoutAccount | null; kobo_per_diamond?: number; min_diamonds?: number }>('/v1/wallet/payout-account'),
     setPayoutAccount: (bank_code: string, account_number: string) =>
       c.put<{ account: T.PayoutAccount }>('/v1/wallet/payout-account', { bank_code, account_number }),
   };

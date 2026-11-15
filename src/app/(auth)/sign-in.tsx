@@ -9,11 +9,13 @@ import type { OAuthProvider } from '@/lib/api/types';
 import { availableProviders, providerLabels } from '@/lib/auth/providers';
 import { useSession } from '@/lib/auth/session';
 import { useSignIn } from '@/lib/auth/useSignIn';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 
 const providerGlyph: Record<OAuthProvider, string> = { google: 'G', apple: '', facebook: 'f', x: '𝕏', line: 'L', kakao: 'K' };
 
 export default function SignIn() {
+  const { colors } = useTheme();
+  const st = useSt();
   const { busy, withProvider } = useSignIn();
   const guest = useSession((s) => s.guest);
   const browseAsGuest = useSession((s) => s.browseAsGuest);
@@ -137,6 +139,8 @@ function ProviderButton({
   disabled: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const st = useSt();
   return (
     <Pressable
       onPress={onPress}
@@ -156,7 +160,7 @@ function ProviderButton({
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   body: { padding: space.xl, gap: space.md, flexGrow: 1 },
   logo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: space.xl, marginBottom: space.lg },
   logoDot: { width: 18, height: 18, borderRadius: 9, backgroundColor: colors.live },
@@ -188,4 +192,4 @@ const st = StyleSheet.create({
   glyph: { width: 28, alignItems: 'center' },
   links: { flexDirection: 'row', justifyContent: 'center', gap: space.md, marginTop: space.sm },
   link: { color: colors.mutedStrong, fontFamily: fonts.bodySemibold },
-});
+}));

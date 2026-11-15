@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { toast, toastError } from '@/components/Toast';
 import { Button, ErrorView, Field, Header, ListRow, Loading, Screen, Text } from '@/components/ui';
@@ -12,9 +12,11 @@ import { newIdempotencyKey } from '@/lib/device';
 import { useBalance, useCatalog, useStats } from '@/lib/hooks';
 import { buyPack, loadStoreProducts, onPurchaseOutcome, storeProductId } from '@/lib/iap';
 import { qk } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 
 export default function Wallet() {
+  const { colors } = useTheme();
+  const st = useSt();
   const balance = useBalance();
   const catalog = useCatalog();
   const qc = useQueryClient();
@@ -73,6 +75,9 @@ export default function Wallet() {
   const diamonds = parseInt(cashout, 10) || 0;
   const stats = useStats();
   const bank = useQuery({ queryKey: qk.payoutAccount, queryFn: api.wallet.payoutAccount });
+  // Display-only estimate from the server's real rate; finance approves the exact amount.
+  const rate = bank.data?.kobo_per_diamond ?? 0;
+  const minDiamonds = bank.data?.min_diamonds ?? 0;
   const payouts = useQuery({ queryKey: qk.payouts, queryFn: api.wallet.payouts });
   const lv = stats.data;
   const progress = lv ? Math.min(1, (lv.coins_spent - lv.level_start_coins) / Math.max(1, lv.next_level_coins - lv.level_start_coins)) : 0;
@@ -84,7 +89,7 @@ export default function Wallet() {
         <View style={st.balances}>
           <View style={[st.card, { borderColor: colors.coin }]}>
             <Icon name="coin" size={28} />
-            <Text style={[st.big, { color: colors.coin }]}>{(balance.data?.coins ?? 0).toLocaleString()}</Text>
+            <Text style={[st.big, { color: colors.coinText }]}>{(balance.data?.coins ?? 0).toLocaleString()}</Text>
             <Text variant="caption">Coins · for sending gifts</Text>
           </View>
           <View style={[st.card, { borderColor: colors.diamond }]}>
@@ -157,23 +162,29 @@ export default function Wallet() {
           icon="bank"
           onPress={() => router.push('/wallet/bank')}
         />
-        {diamonds > 0 ? (
+        {diamonds > 0 && rate ? (
           <Text variant="caption">
-            ≈ ₦{((diamonds * KOBO_PER_DIAMOND_HINT) / 100).toLocaleString()} before review (final amount is shown when finance approves)
+            ≈ ₦{((diamonds * rate) / 100).toLocaleString()} before review (finance confirms the final amount)
           </Text>
+        ) : minDiamonds ? (
+          <Text variant="caption">Minimum cash-out is {minDiamonds.toLocaleString()} diamonds.</Text>
         ) : null}
         <View style={{ gap: space.md }}>
           <Field
             label="Diamonds"
             value={cashout}
-            onChangeText={(t) => setCashout(t.replace(/\D/g, ''))}
+            onChangeText={(t) => {
+              setCashout(t.replace(/\D/g, ''));
+              // A different amount is a different request: never replay the old one.
+              setPayoutKey(newIdempotencyKey());
+            }}
             keyboardType="number-pad"
             placeholder="e.g. 10000"
           />
           <Button
             title="Request cash-out"
             kind="secondary"
-            disabled={diamonds <= 0 || diamonds > (balance.data?.diamonds ?? 0)}
+            disabled={diamonds <= 0 || diamonds > (balance.data?.diamonds ?? 0) || diamonds < minDiamonds}
             loading={payout.isPending}
             onPress={() =>
               Alert.alert('Cash out?', `Move ${diamonds.toLocaleString()} diamonds to payout. This can't be undone.`, [
@@ -197,7 +208,7 @@ export default function Wallet() {
                     {p.note ? ` · ${p.note}` : ''}
                   </Text>
                 </View>
-                <Text style={{ color: statusColor[p.status] ?? colors.muted, fontFamily: fonts.bodySemibold, fontSize: 13 }}>
+                <Text style={{ color: ({ paid: colors.success, rejected: colors.danger, failed: colors.danger } as Record<string, string>)[p.status] ?? colors.muted, fontFamily: fonts.bodySemibold, fontSize: 13 }}>
                   {statusLabel[p.status] ?? p.status}
                 </Text>
               </View>
@@ -210,8 +221,6 @@ export default function Wallet() {
   );
 }
 
-// Display-only estimate; the server's PAYOUT_KOBO_PER_DIAMOND decides the real amount.
-const KOBO_PER_DIAMOND_HINT = 50;
 const statusLabel: Record<string, string> = {
   pending_review: 'In review',
   processing: 'Sending',
@@ -219,9 +228,8 @@ const statusLabel: Record<string, string> = {
   rejected: 'Declined',
   failed: 'Failed',
 };
-const statusColor: Record<string, string> = { paid: colors.success, rejected: colors.danger, failed: colors.danger };
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   levelCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
   track: { height: 8, borderRadius: 4, backgroundColor: colors.surface2, overflow: 'hidden' },
   fill: { height: 8, backgroundColor: colors.coin },
@@ -242,4 +250,4 @@ const st = StyleSheet.create({
   },
   price: { backgroundColor: colors.coin, borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: 4 },
   priceText: { color: colors.onCoin, fontFamily: fonts.bodySemibold, fontSize: 13 },
-});
+}));

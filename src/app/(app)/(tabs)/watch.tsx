@@ -1,14 +1,18 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { FlatList, RefreshControl } from 'react-native';
+import { FlatList, RefreshControl, View } from 'react-native';
 import { VideoRow } from '@/components/VideoRow';
 import { Empty, ErrorView, Loading, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { FeedItem } from '@/lib/api/types';
 import { qk } from '@/lib/query';
-import { colors, space } from '@/theme/tokens';
+import { space, useLayout, useTheme } from '@/theme';
 
 export default function Watch() {
+  const { colors } = useTheme();
+  // One column on phones; a YouTube-style grid on tablets.
+  const { width } = useLayout();
+  const cols = width >= 1100 ? 3 : width >= 700 ? 2 : 1;
   const q = useInfiniteQuery({
     queryKey: qk.watchFeed,
     queryFn: () => api.feed.watch(20),
@@ -21,7 +25,7 @@ export default function Watch() {
   }, [q.data]);
 
   return (
-    <Screen>
+    <Screen fullWidth>
       <Text variant="title" style={{ paddingHorizontal: space.lg, paddingVertical: space.sm }}>
         Watch
       </Text>
@@ -32,8 +36,19 @@ export default function Watch() {
       ) : (
         <FlatList
           data={items}
+          key={cols}
+          numColumns={cols}
+          columnWrapperStyle={cols > 1 ? { gap: space.lg, paddingHorizontal: space.lg } : undefined}
           keyExtractor={(i) => i.id}
-          renderItem={({ item }) => <VideoRow item={item} />}
+          renderItem={({ item }) =>
+            cols > 1 ? (
+              <View style={{ flex: 1 / cols }}>
+                <VideoRow item={item} />
+              </View>
+            ) : (
+              <VideoRow item={item} />
+            )
+          }
           onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && void q.fetchNextPage()}
           refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => void q.refetch()} tintColor={colors.text} />}
           ListEmptyComponent={<Empty title="No long videos yet" hint="Creators' longer uploads show up here." />}

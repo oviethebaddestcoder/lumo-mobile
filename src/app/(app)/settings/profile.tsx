@@ -9,9 +9,10 @@ import { api } from '@/lib/api';
 import { isApiError } from '@/lib/api/http';
 import type { MePatch } from '@/lib/api/types';
 import { useSession } from '@/lib/auth/session';
-import { colors, fonts, space } from '@/theme/tokens';
+import { fonts, space, useTheme } from '@/theme';
 
 export default function EditProfile() {
+  const { colors } = useTheme();
   const me = useSession((s) => s.me);
   const setMe = useSession((s) => s.setMe);
   const [handle, setHandle] = useState(me?.handle ?? '');

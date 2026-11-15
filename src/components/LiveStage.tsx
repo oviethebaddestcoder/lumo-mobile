@@ -4,7 +4,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { Room, Track } from 'livekit-client';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { colors } from '@/theme/tokens';
+import { makeStyles, fill } from '@/theme';
 import { Loading, Text } from './ui';
 
 /**
@@ -13,6 +13,7 @@ import { Loading, Text } from './ui';
  * render side by side with this room's host on the left.
  */
 export function LiveStage({ hostId }: { hostId: string }) {
+  const st = useSt();
   const tracks = useTracks([Track.Source.Camera], { onlySubscribed: false }).filter(isTrackReference);
   const sorted = [...tracks].sort((a, b) => rank(a, hostId) - rank(b, hostId)).slice(0, 2);
 
@@ -50,13 +51,14 @@ const rank = (t: TrackReference, hostId: string) => (t.participant.identity === 
 
 /** Viewers at very large scale get LL-HLS instead of WebRTC. */
 export function HlsStage({ url }: { url: string }) {
+  const st = useSt();
   const player = useVideoPlayer({ uri: url, contentType: 'hls' }, (p) => {
     p.play();
   });
   const { status } = useEvent(player, 'statusChange', { status: player.status });
   return (
     <View style={StyleSheet.absoluteFill}>
-      <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
+      <VideoView player={player} style={fill} contentFit="cover" nativeControls={false} />
       {status !== 'readyToPlay' ? (
         <View style={[StyleSheet.absoluteFill, st.center]}>
           <Loading />
@@ -100,8 +102,8 @@ export function useCrossPublish(cross: { url: string; token: string } | null) {
   }, [cross, localParticipant, mainRoom]);
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   center: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg, gap: 8 },
   split: { flexDirection: 'row', top: 110, bottom: undefined, height: '45%' },
   half: { flex: 1 },
-});
+}));

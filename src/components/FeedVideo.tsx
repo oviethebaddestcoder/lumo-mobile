@@ -11,7 +11,7 @@ import type { FeedItem, FeedSurface, Impression, VideoCounts } from '@/lib/api/t
 import { useSession } from '@/lib/auth/session';
 import { compact } from '@/lib/format';
 import { impressionFor, useFollow, useLike, useRelationship } from '@/lib/hooks';
-import { colors, fonts, space } from '@/theme/tokens';
+import { fonts, space, makeStyles, useTheme, fill } from '@/theme';
 import { CommentsSheet } from './CommentsSheet';
 import { GiftSheet } from './GiftSheet';
 import { Icon } from './Icon';
@@ -39,6 +39,8 @@ interface Props {
 }
 
 function FeedVideoImpl({ item, height, active, preload, counts, countsKey, onWatched, surface, onHide, focused }: Props) {
+  const { colors } = useTheme();
+  const st = useSt();
   const me = useSession((s) => s.me);
   const signedIn = !!me;
   const player = useVideoPlayer(preload ? { uri: item.hls_url, contentType: 'hls' } : null, (p) => {
@@ -127,7 +129,7 @@ function FeedVideoImpl({ item, height, active, preload, counts, countsKey, onWat
         {preload ? (
           <VideoView
             player={player}
-            style={StyleSheet.absoluteFill}
+            style={fill}
             contentFit={item.height >= item.width ? 'cover' : 'contain'}
             nativeControls={false}
             allowsPictureInPicture={false}
@@ -249,6 +251,7 @@ function RailButton({
   color?: string;
   a11y: string;
 }) {
+  const st = useSt();
   return (
     <Pressable onPress={onPress} style={{ alignItems: 'center', gap: 4 }} accessibilityRole="button" accessibilityLabel={a11y} hitSlop={6}>
       <Icon name={icon} size={32} color={color} />
@@ -259,7 +262,7 @@ function RailButton({
 
 const shadow = { textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } };
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   pauseIcon: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   caption: { position: 'absolute', left: space.lg, right: 90, bottom: space.xl, gap: 6 },
   handle: { fontFamily: fonts.bodyBold, fontSize: 16, ...shadow },
@@ -277,4 +280,4 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

@@ -11,11 +11,13 @@ import { useSession } from '@/lib/auth/session';
 import { newIdempotencyKey } from '@/lib/device';
 import { onMeEvent, onMeReconnect } from '@/lib/meChannel';
 import { qk } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 
 type Pending = DirectMessage & { pending?: boolean; failed?: boolean };
 
 export default function Chat() {
+  const { colors, scheme } = useTheme();
+  const st = useSt();
   const { id } = useLocalSearchParams<{ id: string }>();
   const me = useSession((s) => s.me);
   const qc = useQueryClient();
@@ -166,10 +168,10 @@ export default function Chat() {
                   style={[st.bubble, mine ? st.mine : st.theirs, item.pending && { opacity: 0.6 }]}
                   accessibilityHint={mine ? 'Long press to unsend' : undefined}
                 >
-                  <Text style={item.deleted ? { color: colors.muted, fontStyle: 'italic' } : undefined}>
+                  <Text style={item.deleted ? { color: mine ? colors.onLive : colors.muted, opacity: mine ? 0.8 : 1, fontStyle: 'italic' } : mine ? { color: colors.onLive } : undefined}>
                     {item.deleted ? 'Message unsent' : item.text}
                   </Text>
-                  {item.failed ? <Text style={{ color: colors.danger, fontSize: 11 }}>Not sent. Long press to retry.</Text> : null}
+                  {item.failed ? <Text style={{ color: mine ? colors.onLive : colors.danger, fontSize: 11, fontFamily: fonts.bodySemibold }}>Not sent. Long press to retry.</Text> : null}
                 </Pressable>
               );
             }}
@@ -183,10 +185,11 @@ export default function Chat() {
             placeholderTextColor={colors.inactive}
             maxLength={1000}
             multiline
+            keyboardAppearance={scheme}
             style={st.input}
           />
           <Pressable onPress={send} disabled={!text.trim()} style={[st.send, !text.trim() && { opacity: 0.4 }]} accessibilityLabel="Send">
-            <Icon name="send" size={20} />
+            <Icon name="send" size={20} color={colors.onLive} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -194,7 +197,7 @@ export default function Chat() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   bubble: { maxWidth: '78%', borderRadius: radius.lg, paddingHorizontal: space.md, paddingVertical: 9 },
   mine: { alignSelf: 'flex-end', backgroundColor: colors.live, borderBottomRightRadius: 4 },
   theirs: { alignSelf: 'flex-start', backgroundColor: colors.surface2, borderBottomLeftRadius: 4 },
@@ -219,4 +222,4 @@ const st = StyleSheet.create({
     fontSize: 15,
   },
   send: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.live, alignItems: 'center', justifyContent: 'center' },
-});
+}));

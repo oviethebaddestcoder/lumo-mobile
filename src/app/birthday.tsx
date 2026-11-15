@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 import { toastError } from '@/components/Toast';
 import { Button, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useSession } from '@/lib/auth/session';
 import { ageOn } from '@/lib/format';
-import { colors, fonts, radius, space } from '@/theme/tokens';
+import { fonts, radius, space, makeStyles, useTheme } from '@/theme';
 
 /**
  * New accounts must give a birth date before using the app. Under-13s are
  * refused by the identity service; 13–17 get a restricted (non-adult) account.
  */
 export default function Birthday() {
+  const { colors } = useTheme();
   const setMe = useSession((s) => s.setMe);
   const signOut = useSession((s) => s.signOut);
   const [d, setD] = useState('');
@@ -77,6 +78,8 @@ function Part({
   max: number;
   flex?: number;
 }) {
+  const { colors } = useTheme();
+  const st = useSt();
   return (
     <TextInput
       value={value}
@@ -90,7 +93,7 @@ function Part({
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   part: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -102,4 +105,4 @@ const st = StyleSheet.create({
     fontFamily: fonts.headingMedium,
     fontSize: 20,
   },
-});
+}));

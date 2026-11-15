@@ -6,12 +6,14 @@ import { Icon } from '@/components/Icon';
 import { Avatar, Empty, Field, Header, Loading, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
 import { qk } from '@/lib/query';
-import { colors, fonts, space } from '@/theme/tokens';
+import { fonts, space, makeStyles, useTheme } from '@/theme';
 
 type Tab = 'people' | 'hashtags';
 
 /** People (handle / name prefix) and hashtags. */
 export default function Search() {
+  const { colors } = useTheme();
+  const st = useSt();
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
   const [tab, setTab] = useState<Tab>('people');
@@ -85,10 +87,10 @@ export default function Search() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   tabs: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   tab: { flex: 1, alignItems: 'center', paddingVertical: space.sm },
   on: { borderBottomWidth: 2, borderBottomColor: colors.text },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.sm },
   hash: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' },
-});
+}));

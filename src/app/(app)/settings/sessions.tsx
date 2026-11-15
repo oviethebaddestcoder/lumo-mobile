@@ -5,9 +5,11 @@ import { Button, ErrorView, Header, Loading, Screen, Text } from '@/components/u
 import { api } from '@/lib/api';
 import { timeAgo } from '@/lib/format';
 import { qk } from '@/lib/query';
-import { colors, space } from '@/theme/tokens';
+import { space, makeStyles, useTheme } from '@/theme';
 
 export default function Sessions() {
+  const { colors } = useTheme();
+  const st = useSt();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: qk.sessions, queryFn: api.identity.sessions });
   const revoke = useMutation({
@@ -61,7 +63,7 @@ export default function Sessions() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((colors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -70,4 +72,4 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-});
+}));
